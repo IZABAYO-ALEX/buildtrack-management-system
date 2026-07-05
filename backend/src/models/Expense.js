@@ -35,6 +35,15 @@ const Expense = sequelize.define('Expense', {
     allowNull: true,
     field: 'receipt_url'
   },
+  invoiceNumber: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    field: 'invoice_number'
+  },
+  supplier: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
   recordedBy: {
     type: DataTypes.UUID,
     allowNull: false,
@@ -55,7 +64,10 @@ const Expense = sequelize.define('Expense', {
     field: 'approved_at'
   }
 }, {
-  tableName: 'expenses'
+  tableName: 'expenses',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
 });
 
 export default Expense;

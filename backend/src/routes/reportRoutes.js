@@ -1,29 +1,21 @@
 import express from 'express';
+import {
+  getExpenseReport,
+  getWorkerReport,
+  getMaterialReport,
+  getBudgetReport,
+  getProfitabilityReport
+} from '../controllers/reportController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router.use(authenticate);
 
-// Placeholder routes
-router.get('/expenses', (req, res) => {
-  res.json({ success: true, message: 'Expense report' });
-});
-
-router.get('/workers', (req, res) => {
-  res.json({ success: true, message: 'Worker report' });
-});
-
-router.get('/materials', (req, res) => {
-  res.json({ success: true, message: 'Material report' });
-});
-
-router.get('/budget', (req, res) => {
-  res.json({ success: true, message: 'Budget report' });
-});
-
-router.get('/profitability', (req, res) => {
-  res.json({ success: true, message: 'Profitability report' });
-});
+router.get('/expenses', authorize('contractor', 'accountant'), getExpenseReport);
+router.get('/workers', authorize('contractor', 'accountant', 'site_manager'), getWorkerReport);
+router.get('/materials', authorize('contractor', 'accountant'), getMaterialReport);
+router.get('/budget', authorize('contractor', 'accountant'), getBudgetReport);
+router.get('/profitability', authorize('contractor'), getProfitabilityReport);
 
 export default router;

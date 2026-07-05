@@ -32,8 +32,13 @@ const Attendance = sequelize.define('Attendance', {
     allowNull: true,
     field: 'check_out'
   },
+  hoursWorked: {
+    type: DataTypes.DECIMAL(5, 2),
+    defaultValue: 0,
+    field: 'hours_worked'
+  },
   status: {
-    type: DataTypes.ENUM('present', 'absent', 'half_day'),
+    type: DataTypes.ENUM('present', 'absent', 'half_day', 'leave'),
     defaultValue: 'present'
   },
   notes: {

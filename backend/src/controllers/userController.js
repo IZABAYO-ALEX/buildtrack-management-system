@@ -25,13 +25,16 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email already exists' });
     }
 
+    const hashedPassword = await bcrypt.hash(password || 'password123', 10);
+    
     const user = await User.create({
       email,
-      passwordHash: password,
+      passwordHash: hashedPassword,
       fullName,
-      role,
-      phone,
-      companyName
+      role: role || 'site_manager',
+      phone: phone || '',
+      companyName: companyName || '',
+      isActive: true
     });
 
     await Audit.create({
@@ -47,7 +50,10 @@ export const createUser = async (req, res) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
-        role: user.role
+        role: user.role,
+        phone: user.phone,
+        companyName: user.companyName,
+        isActive: user.isActive
       }
     });
   } catch (error) {
@@ -59,21 +65,23 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fullName, phone, role, isActive } = req.body;
+    const { fullName, phone, role, isActive, password } = req.body;
 
     const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const updates = { fullName, phone, role, isActive };
-    Object.keys(updates).forEach(key => {
-      if (updates[key] !== undefined) {
-        user[key] = updates[key];
-      }
-    });
+    const updates = {};
+    if (fullName !== undefined) updates.fullName = fullName;
+    if (phone !== undefined) updates.phone = phone;
+    if (role !== undefined) updates.role = role;
+    if (isActive !== undefined) updates.isActive = isActive;
+    if (password && password.length > 0) {
+      updates.passwordHash = await bcrypt.hash(password, 10);
+    }
 
-    await user.save();
+    await user.update(updates);
 
     await Audit.create({
       userId: req.user.id,
@@ -82,15 +90,13 @@ export const updateUser = async (req, res) => {
       affectedRecord: id
     });
 
+    const userData = await User.findByPk(id, {
+      attributes: { exclude: ['passwordHash'] }
+    });
+
     res.json({
       success: true,
-      data: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-        isActive: user.isActive
-      }
+      data: userData
     });
   } catch (error) {
     logger.error('Update user error:', error);

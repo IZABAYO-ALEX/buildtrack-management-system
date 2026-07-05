@@ -14,28 +14,66 @@ import Reports from './pages/Reports/Reports';
 import Users from './pages/Users/Users';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" />;
-  if (allowedRoles && !allowedRoles.includes(user?.role)) {
+  const { isAuthenticated, user, isLoading } = useAuth();
+  
+  console.log('🔒 ProtectedRoute:', { isAuthenticated, user, isLoading });
+  
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated || !user) {
+    console.log('🔒 Not authenticated, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    console.log('🔒 Role not allowed:', user.role, 'Allowed:', allowedRoles);
     const roleMap = {
       contractor: '/dashboard/contractor',
       site_manager: '/dashboard/site-manager',
       accountant: '/dashboard/accountant'
     };
-    return <Navigate to={roleMap[user?.role] || '/dashboard'} />;
+    return <Navigate to={roleMap[user.role] || '/dashboard'} replace />;
   }
+  
+  console.log('🔒 Access granted');
   return children;
 };
 
 const RoleRedirect = () => {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" />;
+  const { user, isLoading } = useAuth();
+  
+  console.log('🔄 RoleRedirect:', { user, isLoading });
+  
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    console.log('🔄 No user, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+  
   const roleMap = {
     contractor: '/dashboard/contractor',
     site_manager: '/dashboard/site-manager',
     accountant: '/dashboard/accountant'
   };
-  return <Navigate to={roleMap[user.role] || '/dashboard'} />;
+  
+  const path = roleMap[user.role] || '/dashboard';
+  console.log('🔄 Redirecting to:', path);
+  return <Navigate to={path} replace />;
 };
 
 function App() {
@@ -44,52 +82,89 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<RoleRedirect />} />
-      <Route path="/dashboard/contractor" element={
-        <ProtectedRoute allowedRoles={['contractor']}>
-          <ContractorDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/dashboard/site-manager" element={
-        <ProtectedRoute allowedRoles={['site_manager']}>
-          <SiteManagerDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/dashboard/accountant" element={
-        <ProtectedRoute allowedRoles={['accountant']}>
-          <AccountantDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/projects" element={
-        <ProtectedRoute>
-          <Projects />
-        </ProtectedRoute>
-      } />
-      <Route path="/expenses" element={
-        <ProtectedRoute>
-          <Expenses />
-        </ProtectedRoute>
-      } />
-      <Route path="/workers" element={
-        <ProtectedRoute>
-          <Workers />
-        </ProtectedRoute>
-      } />
-      <Route path="/materials" element={
-        <ProtectedRoute>
-          <Materials />
-        </ProtectedRoute>
-      } />
-      <Route path="/reports" element={
-        <ProtectedRoute>
-          <Reports />
-        </ProtectedRoute>
-      } />
-      <Route path="/users" element={
-        <ProtectedRoute allowedRoles={['contractor']}>
-          <Users />
-        </ProtectedRoute>
-      } />
-      <Route path="*" element={<Navigate to="/" />} />
+      
+      <Route 
+        path="/dashboard/contractor" 
+        element={
+          <ProtectedRoute allowedRoles={['contractor']}>
+            <ContractorDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/dashboard/site-manager" 
+        element={
+          <ProtectedRoute allowedRoles={['site_manager']}>
+            <SiteManagerDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/dashboard/accountant" 
+        element={
+          <ProtectedRoute allowedRoles={['accountant']}>
+            <AccountantDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/projects" 
+        element={
+          <ProtectedRoute>
+            <Projects />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/expenses" 
+        element={
+          <ProtectedRoute>
+            <Expenses />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/workers" 
+        element={
+          <ProtectedRoute>
+            <Workers />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/materials" 
+        element={
+          <ProtectedRoute>
+            <Materials />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/reports" 
+        element={
+          <ProtectedRoute>
+            <Reports />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/users" 
+        element={
+          <ProtectedRoute allowedRoles={['contractor']}>
+            <Users />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

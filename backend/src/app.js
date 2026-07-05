@@ -5,23 +5,26 @@ import morgan from 'morgan';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import { rateLimit } from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import logger from './utils/logger.js';
 import { sequelize } from './config/database.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
 const app = express();
 
-const corsOptions = {
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
   credentials: true,
-  optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-};
+}));
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options('*', cors());
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -35,27 +38,35 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(compression());
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import projectRoutes from './routes/projectRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import workerRoutes from './routes/workerRoutes.js';
+import attendanceRoutes from './routes/attendanceRoutes.js';
 import materialRoutes from './routes/materialRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import auditRoutes from './routes/auditRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/expenses', expenseRoutes);
 app.use('/api/v1/workers', workerRoutes);
+app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/materials', materialRoutes);
 app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/audits', auditRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/upload', uploadRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -74,18 +85,16 @@ const PORT = process.env.PORT || 3000;
 async function startServer() {
   try {
     await sequelize.authenticate();
-    logger.info('Database connected');
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      logger.info('Database synced');
-    }
+    console.log('✅ Database connected');
+    await import('./models/index.js');
+    await sequelize.sync({ alter: false });
+    console.log('✅ Database synced');
     app.listen(PORT, '0.0.0.0', () => {
-      logger.info(`🚀 Server running on port ${PORT}`);
-      logger.info(`📍 Environment: ${process.env.NODE_ENV}`);
-      logger.info(`🔗 http://localhost:${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📍 http://localhost:${PORT}`);
     });
   } catch (error) {
-    logger.error('Server error:', error);
+    console.error('❌ Server error:', error);
     process.exit(1);
   }
 }

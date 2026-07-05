@@ -24,13 +24,23 @@ const WorkerPayment = sequelize.define('WorkerPayment', {
     field: 'payment_date'
   },
   paymentMethod: {
-    type: DataTypes.STRING(50),
+    type: DataTypes.ENUM('cash', 'bank_transfer', 'mobile_money', 'check'),
     allowNull: true,
     field: 'payment_method'
   },
   reference: {
     type: DataTypes.STRING(100),
     allowNull: true
+  },
+  periodStart: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    field: 'period_start'
+  },
+  periodEnd: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    field: 'period_end'
   },
   notes: {
     type: DataTypes.TEXT,

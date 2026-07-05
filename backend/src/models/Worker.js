@@ -34,9 +34,32 @@ const Worker = sequelize.define('Worker', {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
     field: 'is_active'
+  },
+  photoUrl: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'photo_url'
+  },
+  totalHours: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+    field: 'total_hours'
+  },
+  totalPaid: {
+    type: DataTypes.DECIMAL(15, 2),
+    defaultValue: 0,
+    field: 'total_paid'
+  },
+  joinedDate: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    field: 'joined_date'
   }
 }, {
-  tableName: 'workers'
+  tableName: 'workers',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
 });
 
 export default Worker;

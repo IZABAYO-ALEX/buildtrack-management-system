@@ -21,11 +21,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.get('/auth/profile');
       const userData = response.data.data;
+      console.log('👤 User fetched:', userData);
       setUser(userData);
       localStorage.setItem('userRole', userData.role);
     } catch (error) {
-      console.error('Fetch user error:', error);
-      logout();
+      console.error('❌ Fetch user error:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('userRole');
+      setToken(null);
     } finally {
       setIsLoading(false);
     }
@@ -36,6 +39,8 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/login', { email, password });
       const { user, token } = response.data.data;
       
+      console.log('✅ Login successful! User:', user);
+      
       setUser(user);
       setToken(token);
       localStorage.setItem('token', token);
@@ -45,6 +50,7 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true, user };
     } catch (error) {
+      console.error('❌ Login error:', error);
       return { 
         success: false, 
         error: error.response?.data?.message || 'Login failed' 

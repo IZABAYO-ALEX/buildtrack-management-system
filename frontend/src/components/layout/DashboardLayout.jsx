@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   LayoutDashboard,
@@ -15,11 +16,15 @@ import {
   Menu,
   X,
   User,
-  ChevronDown
+  ChevronDown,
+  Shield
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import './DashboardLayout.css';
 
 const DashboardLayout = ({ children, userRole }) => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -31,6 +36,15 @@ const DashboardLayout = ({ children, userRole }) => {
     { icon: Package, label: 'Materials', path: '/materials' },
     { icon: BarChart3, label: 'Reports', path: '/reports' },
   ];
+
+  if (userRole === 'contractor') {
+    menuItems.push({ icon: Shield, label: 'Users', path: '/users' });
+  }
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className={`dashboard-layout ${!sidebarOpen ? 'collapsed' : ''}`}>
@@ -52,7 +66,7 @@ const DashboardLayout = ({ children, userRole }) => {
 
         <nav className="sidebar-nav">
           {menuItems.map((item, index) => (
-            <a key={index} href={item.path} className="nav-item">
+            <a key={index} href={item.path} className="nav-item" onClick={(e) => { e.preventDefault(); navigate(item.path); }}>
               <item.icon size={20} />
               {sidebarOpen && <span>{item.label}</span>}
             </a>
@@ -60,14 +74,14 @@ const DashboardLayout = ({ children, userRole }) => {
         </nav>
 
         <div className="sidebar-footer">
-          <a href="/settings" className="nav-item">
+          <a href="/settings" className="nav-item" onClick={(e) => { e.preventDefault(); navigate('/settings'); }}>
             <Settings size={20} />
             {sidebarOpen && <span>Settings</span>}
           </a>
-          <a href="/logout" className="nav-item logout">
+          <button className="nav-item logout" onClick={handleLogout}>
             <LogOut size={20} />
             {sidebarOpen && <span>Logout</span>}
-          </a>
+          </button>
         </div>
       </motion.aside>
 
@@ -105,7 +119,7 @@ const DashboardLayout = ({ children, userRole }) => {
                   <a href="/profile" className="dropdown-item"><User size={16} />Profile</a>
                   <a href="/settings" className="dropdown-item"><Settings size={16} />Settings</a>
                   <div className="dropdown-divider"></div>
-                  <a href="/logout" className="dropdown-item logout"><LogOut size={16} />Logout</a>
+                  <button className="dropdown-item logout" onClick={handleLogout}><LogOut size={16} />Logout</button>
                 </motion.div>
               )}
             </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  Plus, Search, Edit, Trash2, X, User, 
-  Mail, Phone, Briefcase, CheckCircle, 
-  AlertCircle, RefreshCw
+  Plus, Search, Edit, Trash2, X, 
+  User, Mail, Phone, Briefcase, 
+  CheckCircle, AlertCircle, RefreshCw,
+  Shield, Users as UsersIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -17,16 +18,21 @@ const Users = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
+    password: 'password123',
     fullName: '',
     role: 'site_manager',
     phone: '',
     companyName: ''
   });
 
-  const roles = ['contractor', 'site_manager', 'accountant'];
+  const roles = [
+    { value: 'contractor', label: 'Contractor' },
+    { value: 'site_manager', label: 'Site Manager' },
+    { value: 'accountant', label: 'Accountant' }
+  ];
 
   useEffect(() => {
     fetchUsers();
@@ -46,27 +52,35 @@ const Users = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const response = await userService.create(formData);
       setUsers([response.data.data, ...users]);
-      toast.success('User created successfully!');
+      toast.success(`User ${formData.fullName} created successfully!`);
       setShowCreateModal(false);
       resetForm();
+      fetchUsers();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create user');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const response = await userService.update(selectedUser.id, formData);
       setUsers(users.map(u => u.id === selectedUser.id ? response.data.data : u));
       toast.success('User updated successfully!');
       setShowEditModal(false);
       resetForm();
+      fetchUsers();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update user');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -94,7 +108,7 @@ const Users = () => {
   const resetForm = () => {
     setFormData({
       email: '',
-      password: '',
+      password: 'password123',
       fullName: '',
       role: 'site_manager',
       phone: '',
@@ -135,8 +149,8 @@ const Users = () => {
       <div className="users-container">
         <div className="page-header">
           <div>
-            <h1>Users</h1>
-            <p>Manage all system users</p>
+            <h1>User Management</h1>
+            <p>Create and manage system users ({users.length} total)</p>
           </div>
           <div className="page-actions">
             <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
@@ -170,9 +184,9 @@ const Users = () => {
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="empty-state">
-            <User size={64} />
+            <UsersIcon size={64} />
             <h3>No users found</h3>
-            <p>Create your first user</p>
+            <p>Create your first user to get started</p>
             <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
               <Plus size={18} />
               Create User
@@ -197,9 +211,11 @@ const Users = () => {
                     <button className="icon-btn" onClick={() => openEditModal(user)}>
                       <Edit size={18} />
                     </button>
-                    <button className="icon-btn" onClick={() => handleDeactivate(user.id)}>
-                      <AlertCircle size={18} />
-                    </button>
+                    {user.isActive && (
+                      <button className="icon-btn" onClick={() => handleDeactivate(user.id)}>
+                        <AlertCircle size={18} />
+                      </button>
+                    )}
                     <button className="icon-btn danger" onClick={() => handleDelete(user.id)}>
                       <Trash2 size={18} />
                     </button>
@@ -210,6 +226,7 @@ const Users = () => {
                   <p className="user-email"><Mail size={14} /> {user.email}</p>
                   <div className="user-details">
                     <span className={`role-badge ${getRoleColor(user.role)}`}>
+                      <Shield size={12} />
                       {user.role.replace('_', ' ').toUpperCase()}
                     </span>
                     {user.phone && (
@@ -224,7 +241,9 @@ const Users = () => {
                   <span className={`status-badge ${user.isActive ? 'success' : 'danger'}`}>
                     {user.isActive ? 'Active' : 'Inactive'}
                   </span>
-                  <span className="user-created">Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                  <span className="user-created">
+                    Joined {new Date(user.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
               </motion.div>
             ))}
@@ -232,174 +251,176 @@ const Users = () => {
         )}
 
         {/* Create Modal */}
-        <AnimatePresence>
-          {showCreateModal && (
-            <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <motion.div className="modal" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}>
-                <div className="modal-header">
-                  <h2>Create User</h2>
-                  <button className="modal-close" onClick={() => setShowCreateModal(false)}>
-                    <X size={24} />
+        {showCreateModal && (
+          <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Create New User</h2>
+                <p className="modal-subtitle">The user will receive an email with their login credentials</p>
+                <button className="modal-close" onClick={() => setShowCreateModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              <form onSubmit={handleCreate} className="modal-form">
+                <div className="form-grid">
+                  <div className="form-group full-width">
+                    <label>Full Name *</label>
+                    <input
+                      type="text"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      required
+                      placeholder="Enter full name"
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Email *</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Password</label>
+                    <input
+                      type="text"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="Default: password123"
+                    />
+                    <small>Default password: password123</small>
+                  </div>
+                  <div className="form-group">
+                    <label>Role *</label>
+                    <select
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      required
+                    >
+                      {roles.map(role => (
+                        <option key={role.value} value={role.value}>
+                          {role.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Phone</label>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Company Name</label>
+                    <input
+                      type="text"
+                      value={formData.companyName}
+                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? 'Creating...' : 'Create User'}
                   </button>
                 </div>
-                <form onSubmit={handleCreate} className="modal-form">
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Full Name *</label>
-                      <input
-                        type="text"
-                        value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Email *</label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Password *</label>
-                      <input
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Role *</label>
-                      <select
-                        value={formData.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        required
-                      >
-                        {roles.map(role => (
-                          <option key={role} value={role}>
-                            {role.replace('_', ' ').toUpperCase()}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Phone</label>
-                      <input
-                        type="text"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Company Name</label>
-                      <input
-                        type="text"
-                        value={formData.companyName}
-                        onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn-primary">
-                      Create User
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Edit Modal */}
-        <AnimatePresence>
-          {showEditModal && selectedUser && (
-            <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <motion.div className="modal" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}>
-                <div className="modal-header">
-                  <h2>Edit User</h2>
-                  <button className="modal-close" onClick={() => setShowEditModal(false)}>
-                    <X size={24} />
+        {showEditModal && selectedUser && (
+          <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Edit User</h2>
+                <button className="modal-close" onClick={() => setShowEditModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              <form onSubmit={handleUpdate} className="modal-form">
+                <div className="form-grid">
+                  <div className="form-group full-width">
+                    <label>Full Name *</label>
+                    <input
+                      type="text"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Email *</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Password (leave blank to keep current)</label>
+                    <input
+                      type="text"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="Enter new password"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Role *</label>
+                    <select
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      required
+                    >
+                      {roles.map(role => (
+                        <option key={role.value} value={role.value}>
+                          {role.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Phone</label>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Company Name</label>
+                    <input
+                      type="text"
+                      value={formData.companyName}
+                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? 'Updating...' : 'Update User'}
                   </button>
                 </div>
-                <form onSubmit={handleUpdate} className="modal-form">
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Full Name *</label>
-                      <input
-                        type="text"
-                        value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Email *</label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Password (leave blank to keep current)</label>
-                      <input
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        placeholder="Enter new password"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Role *</label>
-                      <select
-                        value={formData.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        required
-                      >
-                        {roles.map(role => (
-                          <option key={role} value={role}>
-                            {role.replace('_', ' ').toUpperCase()}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Phone</label>
-                      <input
-                        type="text"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Company Name</label>
-                      <input
-                        type="text"
-                        value={formData.companyName}
-                        onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn-primary">
-                      Update User
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

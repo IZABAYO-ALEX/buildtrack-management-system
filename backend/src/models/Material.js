@@ -16,6 +16,10 @@ const Material = sequelize.define('Material', {
     type: DataTypes.STRING(255),
     allowNull: false
   },
+  category: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
   quantity: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
@@ -50,6 +54,11 @@ const Material = sequelize.define('Material', {
     type: DataTypes.STRING(255),
     allowNull: true,
     field: 'receipt_url'
+  },
+  consumedQuantity: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+    field: 'consumed_quantity'
   }
 }, {
   tableName: 'materials',

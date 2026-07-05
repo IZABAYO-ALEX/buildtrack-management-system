@@ -24,48 +24,37 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('site_manager');
   const [error, setError] = useState('');
 
-  // Pre-fill for testing
-  const fillCredentials = (role) => {
-    const credentials = {
-      contractor: { email: 'contractor@buildtrack.com', password: 'password123' },
-      site_manager: { email: 'manager@buildtrack.com', password: 'password123' },
-      accountant: { email: 'accountant@buildtrack.com', password: 'password123' }
-    };
-    const cred = credentials[role];
-    if (cred) {
-      setEmail(cred.email);
-      setPassword(cred.password);
-    }
-  };
+  const roles = [
+    { id: 'contractor', name: 'Contractor', icon: <Briefcase size={24} />, description: 'Manage projects & profitability', color: '#6366F1' },
+    { id: 'site_manager', name: 'Site Manager', icon: <HardHat size={24} />, description: 'Track daily operations', color: '#F59E0B' },
+    { id: 'accountant', name: 'Accountant', icon: <Calculator size={24} />, description: 'Review expenses & reports', color: '#10B981' }
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    console.log('🔑 Attempting login with:', email);
-
     try {
       const result = await login(email, password);
       
-      if (result.success && result.user) {
-        console.log('✅ Login successful! User role:', result.user.role);
-        
+      if (result.success) {
+        const userRole = result.user?.role || selectedRole;
         const roleMap = {
           contractor: '/dashboard/contractor',
           site_manager: '/dashboard/site-manager',
           accountant: '/dashboard/accountant'
         };
-        const dashboardPath = roleMap[result.user.role] || '/dashboard';
-        console.log('🔄 Redirecting to:', dashboardPath);
-        navigate(dashboardPath, { replace: true });
+        navigate(roleMap[userRole] || '/dashboard');
       } else {
         setError(result.error || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
       setError('Network error. Please make sure the server is running.');
+      console.error('Login error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -103,22 +92,27 @@ const Login = () => {
         >
           <div className="login-form">
             <h2>Sign In</h2>
-            <p className="form-subtitle">Enter your credentials to access your dashboard</p>
+            <p className="form-subtitle">Select your role and enter your credentials</p>
 
-            {/* Quick Login Buttons */}
-            <div className="quick-login">
-              <button type="button" className="quick-login-btn contractor" onClick={() => fillCredentials('contractor')}>
-                <Briefcase size={16} />
-                Contractor
-              </button>
-              <button type="button" className="quick-login-btn site_manager" onClick={() => fillCredentials('site_manager')}>
-                <HardHat size={16} />
-                Site Manager
-              </button>
-              <button type="button" className="quick-login-btn accountant" onClick={() => fillCredentials('accountant')}>
-                <Calculator size={16} />
-                Accountant
-              </button>
+            <div className="role-selector">
+              {roles.map((role) => (
+                <button
+                  key={role.id}
+                  className={`role-btn ${selectedRole === role.id ? 'active' : ''}`}
+                  onClick={() => setSelectedRole(role.id)}
+                  style={{ 
+                    borderColor: selectedRole === role.id ? role.color : '#e2e8f0',
+                    backgroundColor: selectedRole === role.id ? `${role.color}10` : 'transparent'
+                  }}
+                >
+                  <div className="role-icon" style={{ color: role.color }}>{role.icon}</div>
+                  <div className="role-info">
+                    <span className="role-name">{role.name}</span>
+                    <span className="role-desc">{role.description}</span>
+                  </div>
+                  {selectedRole === role.id && <CheckCircle size={16} color={role.color} />}
+                </button>
+              ))}
             </div>
 
             {error && <div className="error-message">{error}</div>}
@@ -176,6 +170,10 @@ const Login = () => {
                 {isLoading ? <span className="spinner"></span> : <>Sign In <ArrowRight size={18} /></>}
               </button>
             </form>
+
+            <div className="login-divider"><span>Or continue with</span></div>
+            <button type="button" className="social-btn"><img src="/google.svg" alt="Google" />Sign in with Google</button>
+            <p className="signup-text">Don't have an account? <Link to="/signup">Create one now</Link></p>
           </div>
         </motion.div>
       </div>

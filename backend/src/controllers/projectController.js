@@ -1,8 +1,4 @@
-import Project from '../models/Project.js';
-import Expense from '../models/Expense.js';
-import Worker from '../models/Worker.js';
-import Audit from '../models/Audit.js';
-import { sequelize } from '../config/database.js';
+import { Project, Expense, Worker } from '../models/index.js';
 import logger from '../utils/logger.js';
 
 export const createProject = async (req, res) => {
@@ -19,13 +15,6 @@ export const createProject = async (req, res) => {
       endDate,
       status: status || 'planning',
       contractorId: req.user.id
-    });
-
-    await Audit.create({
-      userId: req.user.id,
-      action: 'CREATE_PROJECT',
-      details: { projectId: project.id, name: project.name },
-      affectedRecord: project.id
     });
 
     res.status(201).json({ success: true, data: project });
@@ -46,14 +35,14 @@ export const getProjects = async (req, res) => {
     const projects = await Project.findAll({
       where,
       include: [
-        { model: Expense, attributes: ['id', 'amount'] },
-        { model: Worker, attributes: ['id'] }
+        { model: Expense, attributes: ['id', 'amount'], required: false },
+        { model: Worker, attributes: ['id'], required: false }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     const projectsWithMetrics = projects.map(project => {
-      const totalExpenses = project.Expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+      const totalExpenses = project.Expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
       const remainingBudget = project.budget - totalExpenses;
       const budgetUtilization = project.budget > 0 ? (totalExpenses / project.budget) * 100 : 0;
 
@@ -62,7 +51,7 @@ export const getProjects = async (req, res) => {
         totalExpenses,
         remainingBudget,
         budgetUtilization,
-        workerCount: project.Workers.length
+        workerCount: project.Workers?.length || 0
       };
     });
 
@@ -77,8 +66,8 @@ export const getProjectById = async (req, res) => {
   try {
     const project = await Project.findByPk(req.params.id, {
       include: [
-        { model: Expense, attributes: ['id', 'amount', 'category', 'description', 'date'] },
-        { model: Worker, attributes: ['id', 'fullName', 'role'] }
+        { model: Expense, attributes: ['id', 'amount', 'category', 'description', 'date'], required: false },
+        { model: Worker, attributes: ['id', 'fullName', 'role'], required: false }
       ]
     });
 
@@ -86,7 +75,7 @@ export const getProjectById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    const totalExpenses = project.Expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    const totalExpenses = project.Expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
     const remainingBudget = project.budget - totalExpenses;
     const budgetUtilization = project.budget > 0 ? (totalExpenses / project.budget) * 100 : 0;
 
@@ -97,7 +86,7 @@ export const getProjectById = async (req, res) => {
         totalExpenses,
         remainingBudget,
         budgetUtilization,
-        workerCount: project.Workers.length
+        workerCount: project.Workers?.length || 0
       }
     });
   } catch (error) {
@@ -113,15 +102,7 @@ export const updateProject = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    const oldValues = { ...project.toJSON() };
     await project.update(req.body);
-
-    await Audit.create({
-      userId: req.user.id,
-      action: 'UPDATE_PROJECT',
-      details: { projectId: project.id, oldValues, newValues: req.body },
-      affectedRecord: project.id
-    });
 
     res.json({ success: true, data: project });
   } catch (error) {
@@ -140,13 +121,6 @@ export const archiveProject = async (req, res) => {
     project.isArchived = true;
     await project.save();
 
-    await Audit.create({
-      userId: req.user.id,
-      action: 'ARCHIVE_PROJECT',
-      details: { projectId: project.id, name: project.name },
-      affectedRecord: project.id
-    });
-
     res.json({ success: true, message: 'Project archived successfully' });
   } catch (error) {
     logger.error('Archive project error:', error);
@@ -162,13 +136,6 @@ export const deleteProject = async (req, res) => {
     }
 
     await project.destroy();
-
-    await Audit.create({
-      userId: req.user.id,
-      action: 'DELETE_PROJECT',
-      details: { projectId: project.id, name: project.name },
-      affectedRecord: project.id
-    });
 
     res.json({ success: true, message: 'Project deleted successfully' });
   } catch (error) {

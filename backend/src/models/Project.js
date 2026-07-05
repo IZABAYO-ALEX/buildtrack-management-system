@@ -40,7 +40,7 @@ const Project = sequelize.define('Project', {
     field: 'end_date'
   },
   status: {
-    type: DataTypes.ENUM('planning', 'active', 'completed', 'suspended'),
+    type: DataTypes.ENUM('planning', 'active', 'completed', 'suspended', 'cancelled'),
     defaultValue: 'planning'
   },
   isArchived: {
@@ -54,7 +54,10 @@ const Project = sequelize.define('Project', {
     field: 'contractor_id'
   }
 }, {
-  tableName: 'projects'
+  tableName: 'projects',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
 });
 
 export default Project;

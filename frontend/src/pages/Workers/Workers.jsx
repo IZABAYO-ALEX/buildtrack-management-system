@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  Plus, Search, Edit, Trash2, Eye, X, 
-  Users, DollarSign, Phone, MapPin, Calendar,
-  CheckCircle, Clock, AlertCircle, RefreshCw
+  Plus, Search, Edit, Trash2, Eye, 
+  X, Users, Phone, DollarSign, 
+  RefreshCw, CheckCircle, AlertCircle,
+  Calendar, Clock, Upload, Camera,
+  FileText, Image
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { workerService, projectService } from '../../services/api';
+import api, { workerService, projectService } from '../../services/api';
 import './Workers.css';
 
 const Workers = () => {
@@ -17,13 +19,18 @@ const Workers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
     role: '',
     rate: '',
-    projectId: ''
+    projectId: '',
+    joinedDate: ''
   });
 
   useEffect(() => {
@@ -48,27 +55,53 @@ const Workers = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    
+    const formDataObj = new FormData();
+    Object.keys(formData).forEach(key => {
+      if (formData[key]) formDataObj.append(key, formData[key]);
+    });
+    if (photoFile) formDataObj.append('photo', photoFile);
+
     try {
-      const response = await workerService.create(formData);
+      const response = await api.post('/workers', formDataObj, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setWorkers([response.data.data, ...workers]);
-      toast.success('Worker created successfully!');
+      toast.success('Worker registered successfully!');
       setShowCreateModal(false);
       resetForm();
+      fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create worker');
+      toast.error(error.response?.data?.message || 'Failed to register worker');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
+    const formDataObj = new FormData();
+    Object.keys(formData).forEach(key => {
+      if (formData[key]) formDataObj.append(key, formData[key]);
+    });
+    if (photoFile) formDataObj.append('photo', photoFile);
+
     try {
-      const response = await workerService.update(selectedWorker.id, formData);
+      const response = await api.put(`/workers/${selectedWorker.id}`, formDataObj, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setWorkers(workers.map(w => w.id === selectedWorker.id ? response.data.data : w));
       toast.success('Worker updated successfully!');
       setShowEditModal(false);
       resetForm();
+      fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update worker');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -89,9 +122,24 @@ const Workers = () => {
       phone: '',
       role: '',
       rate: '',
-      projectId: ''
+      projectId: '',
+      joinedDate: ''
     });
+    setPhotoFile(null);
+    setPhotoPreview(null);
     setSelectedWorker(null);
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const openEditModal = (worker) => {
@@ -101,9 +149,21 @@ const Workers = () => {
       phone: worker.phone || '',
       role: worker.role,
       rate: worker.rate,
-      projectId: worker.projectId
+      projectId: worker.projectId,
+      joinedDate: worker.joinedDate || ''
     });
+    setPhotoPreview(worker.photoUrl);
     setShowEditModal(true);
+  };
+
+  const openViewModal = (worker) => {
+    setSelectedWorker(worker);
+    setShowViewModal(true);
+  };
+
+  const getProjectName = (projectId) => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.name || 'Unknown Project';
   };
 
   const filteredWorkers = workers.filter(worker =>
@@ -111,18 +171,13 @@ const Workers = () => {
     worker.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getProjectName = (projectId) => {
-    const project = projects.find(p => p.id === projectId);
-    return project?.name || 'Unknown Project';
-  };
-
   return (
-    <DashboardLayout userRole="contractor">
+    <DashboardLayout userRole="site_manager">
       <div className="workers-container">
         <div className="page-header">
           <div>
             <h1>Workers</h1>
-            <p>Manage all your construction workers</p>
+            <p>Manage all your construction workers ({workers.length} total)</p>
           </div>
           <div className="page-actions">
             <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
@@ -176,10 +231,17 @@ const Workers = () => {
                 whileHover={{ y: -4 }}
               >
                 <div className="worker-card-header">
-                  <div className="worker-avatar">
-                    {worker.fullName.charAt(0).toUpperCase()}
+                  <div className="worker-avatar" onClick={() => openViewModal(worker)}>
+                    {worker.photoUrl ? (
+                      <img src={`http://localhost:3000${worker.photoUrl}`} alt={worker.fullName} />
+                    ) : (
+                      worker.fullName.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div className="worker-actions">
+                    <button className="icon-btn" onClick={() => openViewModal(worker)}>
+                      <Eye size={18} />
+                    </button>
                     <button className="icon-btn" onClick={() => openEditModal(worker)}>
                       <Edit size={18} />
                     </button>
@@ -188,7 +250,7 @@ const Workers = () => {
                     </button>
                   </div>
                 </div>
-                <div className="worker-card-body">
+                <div className="worker-card-body" onClick={() => openViewModal(worker)} style={{ cursor: 'pointer' }}>
                   <h3 className="worker-name">{worker.fullName}</h3>
                   <p className="worker-role">{worker.role}</p>
                   <div className="worker-details">
@@ -201,14 +263,21 @@ const Workers = () => {
                       <span>${worker.rate}/day</span>
                     </div>
                     <div className="worker-detail">
-                      <MapPin size={14} />
+                      <Users size={14} />
                       <span>{getProjectName(worker.projectId)}</span>
+                    </div>
+                    <div className="worker-detail">
+                      <Clock size={14} />
+                      <span>{worker.totalHours || 0}h worked</span>
                     </div>
                   </div>
                 </div>
                 <div className="worker-card-footer">
                   <span className={`status-badge ${worker.isActive ? 'success' : 'danger'}`}>
                     {worker.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                  <span className="worker-payments">
+                    ${worker.totalPaid || 0} paid
                   </span>
                 </div>
               </motion.div>
@@ -217,164 +286,286 @@ const Workers = () => {
         )}
 
         {/* Create Modal */}
-        <AnimatePresence>
-          {showCreateModal && (
-            <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <motion.div className="modal" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}>
-                <div className="modal-header">
-                  <h2>Register Worker</h2>
-                  <button className="modal-close" onClick={() => setShowCreateModal(false)}>
-                    <X size={24} />
+        {showCreateModal && (
+          <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Register Worker</h2>
+                <button className="modal-close" onClick={() => setShowCreateModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              <form onSubmit={handleCreate} className="modal-form">
+                <div className="form-grid">
+                  <div className="form-group full-width">
+                    <label>Photo</label>
+                    <div className="photo-upload">
+                      {photoPreview ? (
+                        <div className="photo-preview">
+                          <img src={photoPreview} alt="Preview" />
+                          <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}>
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="upload-area">
+                          <Upload size={24} />
+                          <span>Click to upload photo</span>
+                          <input type="file" accept="image/*" onChange={handlePhotoChange} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Full Name *</label>
+                    <input
+                      type="text"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      required
+                      placeholder="Enter full name"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number</label>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Role *</label>
+                    <input
+                      type="text"
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      required
+                      placeholder="e.g. Foreman, Laborer"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Daily Rate *</label>
+                    <input
+                      type="number"
+                      value={formData.rate}
+                      onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
+                      required
+                      placeholder="Enter daily rate"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Joined Date</label>
+                    <input
+                      type="date"
+                      value={formData.joinedDate}
+                      onChange={(e) => setFormData({ ...formData, joinedDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Project *</label>
+                    <select
+                      value={formData.projectId}
+                      onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                      required
+                    >
+                      <option value="">Select a project</option>
+                      {projects.map(project => (
+                        <option key={project.id} value={project.id}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? 'Registering...' : 'Register Worker'}
                   </button>
                 </div>
-                <form onSubmit={handleCreate} className="modal-form">
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Full Name *</label>
-                      <input
-                        type="text"
-                        value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        required
-                        placeholder="Enter full name"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Phone</label>
-                      <input
-                        type="text"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="Enter phone number"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Role *</label>
-                      <input
-                        type="text"
-                        value={formData.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        required
-                        placeholder="e.g. Foreman, Laborer"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Daily Rate *</label>
-                      <input
-                        type="number"
-                        value={formData.rate}
-                        onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-                        required
-                        placeholder="Enter daily rate"
-                      />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Project *</label>
-                      <select
-                        value={formData.projectId}
-                        onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                        required
-                      >
-                        <option value="">Select a project</option>
-                        {projects.map(project => (
-                          <option key={project.id} value={project.id}>
-                            {project.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn-primary">
-                      Register Worker
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Edit Modal */}
-        <AnimatePresence>
-          {showEditModal && selectedWorker && (
-            <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <motion.div className="modal" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}>
-                <div className="modal-header">
-                  <h2>Edit Worker</h2>
-                  <button className="modal-close" onClick={() => setShowEditModal(false)}>
-                    <X size={24} />
+        {showEditModal && selectedWorker && (
+          <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Edit Worker</h2>
+                <button className="modal-close" onClick={() => setShowEditModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              <form onSubmit={handleUpdate} className="modal-form">
+                <div className="form-grid">
+                  <div className="form-group full-width">
+                    <label>Photo</label>
+                    <div className="photo-upload">
+                      {photoPreview ? (
+                        <div className="photo-preview">
+                          <img src={photoPreview.startsWith('data:') ? photoPreview : `http://localhost:3000${photoPreview}`} alt="Preview" />
+                          <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}>
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="upload-area">
+                          <Upload size={24} />
+                          <span>Click to upload photo</span>
+                          <input type="file" accept="image/*" onChange={handlePhotoChange} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Full Name *</label>
+                    <input
+                      type="text"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number</label>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Role *</label>
+                    <input
+                      type="text"
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Daily Rate *</label>
+                    <input
+                      type="number"
+                      value={formData.rate}
+                      onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Joined Date</label>
+                    <input
+                      type="date"
+                      value={formData.joinedDate}
+                      onChange={(e) => setFormData({ ...formData, joinedDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Project *</label>
+                    <select
+                      value={formData.projectId}
+                      onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                      required
+                    >
+                      <option value="">Select a project</option>
+                      {projects.map(project => (
+                        <option key={project.id} value={project.id}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? 'Updating...' : 'Update Worker'}
                   </button>
                 </div>
-                <form onSubmit={handleUpdate} className="modal-form">
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Full Name *</label>
-                      <input
-                        type="text"
-                        value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Phone</label>
-                      <input
-                        type="text"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Role *</label>
-                      <input
-                        type="text"
-                        value={formData.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Daily Rate *</label>
-                      <input
-                        type="number"
-                        value={formData.rate}
-                        onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Project *</label>
-                      <select
-                        value={formData.projectId}
-                        onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                        required
-                      >
-                        <option value="">Select a project</option>
-                        {projects.map(project => (
-                          <option key={project.id} value={project.id}>
-                            {project.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* View Modal */}
+        {showViewModal && selectedWorker && (
+          <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
+            <div className="modal view-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Worker Details</h2>
+                <button className="modal-close" onClick={() => setShowViewModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="view-content">
+                <div className="view-section">
+                  <div className="view-avatar">
+                    {selectedWorker.photoUrl ? (
+                      <img src={`http://localhost:3000${selectedWorker.photoUrl}`} alt={selectedWorker.fullName} />
+                    ) : (
+                      <div className="avatar-placeholder">
+                        {selectedWorker.fullName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn-primary">
-                      Update Worker
-                    </button>
+                  <h3>{selectedWorker.fullName}</h3>
+                  <div className="view-meta">
+                    <span className={`status-badge ${selectedWorker.isActive ? 'success' : 'danger'}`}>
+                      {selectedWorker.isActive ? 'Active' : 'Inactive'}
+                    </span>
                   </div>
-                </form>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                </div>
+                <div className="view-grid">
+                  <div className="view-item">
+                    <label>Role</label>
+                    <p>{selectedWorker.role}</p>
+                  </div>
+                  <div className="view-item">
+                    <label>Phone</label>
+                    <p>{selectedWorker.phone || 'N/A'}</p>
+                  </div>
+                  <div className="view-item">
+                    <label>Daily Rate</label>
+                    <p>${selectedWorker.rate}</p>
+                  </div>
+                  <div className="view-item">
+                    <label>Project</label>
+                    <p>{getProjectName(selectedWorker.projectId)}</p>
+                  </div>
+                  <div className="view-item">
+                    <label>Total Hours Worked</label>
+                    <p>{selectedWorker.totalHours || 0}h</p>
+                  </div>
+                  <div className="view-item">
+                    <label>Total Paid</label>
+                    <p>${selectedWorker.totalPaid || 0}</p>
+                  </div>
+                  <div className="view-item">
+                    <label>Joined Date</label>
+                    <p>{selectedWorker.joinedDate || 'N/A'}</p>
+                  </div>
+                </div>
+                <div className="view-actions">
+                  <button className="btn-primary" onClick={() => {
+                    setShowViewModal(false);
+                    openEditModal(selectedWorker);
+                  }}>
+                    <Edit size={18} />
+                    Edit Worker
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

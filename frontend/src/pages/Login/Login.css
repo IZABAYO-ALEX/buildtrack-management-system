@@ -151,3 +151,58 @@
   .login-brand { padding: 32px; }
   .login-form-wrapper { padding: 32px; }
 }
+.quick-login {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.quick-login-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+
+.quick-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.quick-login-btn.contractor {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.quick-login-btn.contractor:hover {
+  background: #eef2ff;
+}
+
+.quick-login-btn.site_manager {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.quick-login-btn.site_manager:hover {
+  background: #fffbeb;
+}
+
+.quick-login-btn.accountant {
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.quick-login-btn.accountant:hover {
+  background: #ecfdf5;
+}
