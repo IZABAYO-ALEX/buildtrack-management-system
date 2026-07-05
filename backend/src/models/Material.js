@@ -1,0 +1,68 @@
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
+
+const Material = sequelize.define('Material', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  projectId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'project_id'
+  },
+  name: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  quantity: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    validate: { min: 0 }
+  },
+  unit: {
+    type: DataTypes.STRING(50),
+    allowNull: false
+  },
+  unitCost: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    field: 'unit_cost',
+    validate: { min: 0 }
+  },
+  totalCost: {
+    type: DataTypes.DECIMAL(15, 2),
+    field: 'total_cost',
+    validate: { min: 0 }
+  },
+  supplier: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  purchaseDate: {
+    type: DataTypes.DATEONLY,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+    field: 'purchase_date'
+  },
+  receiptUrl: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'receipt_url'
+  }
+}, {
+  tableName: 'materials',
+  hooks: {
+    beforeCreate: (material) => {
+      material.totalCost = material.quantity * material.unitCost;
+    },
+    beforeUpdate: (material) => {
+      if (material.changed('quantity') || material.changed('unitCost')) {
+        material.totalCost = material.quantity * material.unitCost;
+      }
+    }
+  }
+});
+
+export default Material;
