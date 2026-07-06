@@ -20,7 +20,6 @@ export const generateDailyReport = async (req, res) => {
 
     const reportDate = date || new Date().toISOString().split('T')[0];
 
-    // Check if project exists
     const project = await Project.findByPk(projectId);
     if (!project) {
       return res.status(404).json({ 
@@ -31,7 +30,7 @@ export const generateDailyReport = async (req, res) => {
 
     const attendance = await Attendance.findAll({
       where: { projectId, date: reportDate },
-      include: [{ model: Worker, attributes: ['id', 'fullName', 'role'] }]
+      include: [{ model: Worker, as: 'worker', attributes: ['id', 'fullName', 'role'] }]
     });
 
     const materials = await Material.findAll({
@@ -106,7 +105,7 @@ export const getDailyReports = async (req, res) => {
     const reports = await DailyReport.findAll({
       where,
       include: [
-        { model: Project, attributes: ['id', 'name'] },
+        { model: Project, as: 'project', attributes: ['id', 'name'] },
         { model: User, as: 'generator', attributes: ['id', 'fullName'] }
       ],
       order: [['date', 'DESC']]
@@ -123,7 +122,7 @@ export const getDailyReportById = async (req, res) => {
   try {
     const report = await DailyReport.findByPk(req.params.id, {
       include: [
-        { model: Project, attributes: ['id', 'name'] },
+        { model: Project, as: 'project', attributes: ['id', 'name'] },
         { model: User, as: 'generator', attributes: ['id', 'fullName'] }
       ]
     });
@@ -172,7 +171,7 @@ export const getSiteManagerDashboard = async (req, res) => {
 
     const todayAttendance = await Attendance.findAll({
       where: { projectId, date: today },
-      include: [{ model: Worker, attributes: ['id', 'fullName'] }]
+      include: [{ model: Worker, as: 'worker', attributes: ['id', 'fullName'] }]
     });
 
     const todayExpenses = await Expense.findAll({

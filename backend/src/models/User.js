@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.js';
+import bcrypt from 'bcryptjs';
 
 const User = sequelize.define('User', {
   id: {
@@ -11,7 +12,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(255),
     allowNull: false,
     unique: true,
-    validate: { isEmail: true }
+    validate: {
+      isEmail: { msg: 'Please provide a valid email address' },
+      notEmpty: { msg: 'Email is required' }
+    }
   },
   passwordHash: {
     type: DataTypes.STRING(255),
@@ -21,7 +25,11 @@ const User = sequelize.define('User', {
   fullName: {
     type: DataTypes.STRING(255),
     allowNull: false,
-    field: 'full_name'
+    field: 'full_name',
+    validate: {
+      notEmpty: { msg: 'Full name is required' },
+      len: { args: [2, 255], msg: 'Name must be between 2 and 255 characters' }
+    }
   },
   role: {
     type: DataTypes.ENUM('contractor', 'site_manager', 'accountant'),
@@ -71,16 +79,36 @@ const User = sequelize.define('User', {
   tableName: 'users',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.passwordHash) {
+        const salt = await bcrypt.genSalt(12);
+        user.passwordHash = await bcrypt.hash(user.passwordHash, salt);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('passwordHash')) {
+        const salt = await bcrypt.genSalt(12);
+        user.passwordHash = await bcrypt.hash(user.passwordHash, salt);
+      }
+    }
+  }
 });
 
-// Direct password comparison - NO HASHING
 User.prototype.comparePassword = async function(password) {
-  console.log('🔑 Comparing plain text password:');
-  console.log('   Input:', password);
-  console.log('   Stored:', this.passwordHash);
-  console.log('   Match:', password === this.passwordHash);
-  return password === this.passwordHash;
+  try {
+    return await bcrypt.compare(password, this.passwordHash);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
+  }
+};
+
+User.prototype.toJSON = function() {
+  const values = { ...this.get() };
+  delete values.passwordHash;
+  return values;
 };
 
 export default User;

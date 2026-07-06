@@ -1,16 +1,18 @@
 import { sequelize } from '../config/database.js';
 import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
 
 const seedDatabase = async () => {
   try {
     await sequelize.sync({ force: true });
     console.log('✅ Database synced');
 
-    // Create users with plain text passwords
+    const salt = await bcrypt.genSalt(12);
+    
     const users = await User.bulkCreate([
       {
         email: 'contractor@buildtrack.com',
-        passwordHash: 'password123',  // Plain text!
+        passwordHash: await bcrypt.hash('password123', salt),
         fullName: 'John Contractor',
         role: 'contractor',
         phone: '+256701234567',
@@ -21,7 +23,7 @@ const seedDatabase = async () => {
       },
       {
         email: 'manager@buildtrack.com',
-        passwordHash: 'password123',  // Plain text!
+        passwordHash: await bcrypt.hash('password123', salt),
         fullName: 'Sarah Manager',
         role: 'site_manager',
         phone: '+256701234568',
@@ -31,7 +33,7 @@ const seedDatabase = async () => {
       },
       {
         email: 'accountant@buildtrack.com',
-        passwordHash: 'password123',  // Plain text!
+        passwordHash: await bcrypt.hash('password123', salt),
         fullName: 'Peter Accountant',
         role: 'accountant',
         phone: '+256701234569',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import { 
   Building2, DollarSign, Users, Package, 
   TrendingUp, TrendingDown, ArrowUpRight, 
@@ -8,7 +9,7 @@ import {
   CheckCircle, Clock, BarChart3, Download,
   FileText, UserPlus, RefreshCw,
   FolderOpen, CreditCard, PieChart, Activity,
-  AlertCircle, Send, FileCheck
+  AlertCircle, Send, FileCheck, User
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -17,36 +18,49 @@ import './Dashboard.css';
 
 const ContractorDashboard = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
-  const [projects, setProjects] = useState([]);
-  const [dailyReports, setDailyReports] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAllData();
+    fetchDashboardData();
   }, []);
 
-  const fetchAllData = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
-      const [projectsRes, reportsRes] = await Promise.all([
-        api.get('/projects'),
-        api.get('/daily-reports')
-      ]);
-
-      setProjects(projectsRes.data.data || []);
-      setDailyReports(reportsRes.data.data || []);
-
-      const dashboardRes = await api.get('/dashboard/contractor');
-      setDashboardData(dashboardRes.data.data);
-
+      const response = await api.get('/dashboard/contractor');
+      setDashboardData(response.data.data);
     } catch (error) {
       toast.error('Failed to fetch dashboard data');
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
+
+  const formatCurrency = (amount) => {
+    if (!amount) return '$0';
+    return `$${Number(amount).toLocaleString()}`;
+  };
+
+  const formatPercentage = (value) => {
+    if (!value) return '0%';
+    const num = Number(value);
+    return `${num > 0 ? '+' : ''}${num.toFixed(1)}%`;
+  };
+
+  const getTrendClass = (value) => {
+    if (value === undefined || value === null) return 'neutral';
+    return value >= 0 ? 'up' : 'down';
+  };
+
+  const getTrendIcon = (value) => {
+    if (value === undefined || value === null) return null;
+    return value >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />;
+  };
+
+  const userName = user?.fullName || user?.name || 'Contractor';
 
   if (loading) {
     return (
@@ -59,57 +73,61 @@ const ContractorDashboard = () => {
     );
   }
 
+  const summary = dashboardData?.summary || {};
+
   const stats = [
     {
       title: 'Active Projects',
-      value: dashboardData?.summary?.activeProjects || 0,
-      change: '+12.5%',
-      trend: 'up',
+      value: summary.activeProjects || 0,
+      change: summary.projectChange || 0,
       icon: FolderOpen,
       color: 'primary',
-      subtitle: 'ongoing projects'
+      subtitle: 'ongoing projects',
+      clickable: true,
+      path: '/projects'
     },
     {
       title: 'Total Budget',
-      value: `$${dashboardData?.summary?.totalBudget?.toLocaleString() || 0}`,
-      change: '+8.2%',
-      trend: 'up',
+      value: formatCurrency(summary.totalBudget),
+      change: summary.projectChange || 0,
       icon: DollarSign,
       color: 'success',
       subtitle: 'allocated'
     },
     {
       title: 'Total Expenses',
-      value: `$${dashboardData?.summary?.totalExpenses?.toLocaleString() || 0}`,
-      change: '-5.3%',
-      trend: 'down',
+      value: formatCurrency(summary.totalExpenses),
+      change: summary.expenseChange || 0,
       icon: CreditCard,
       color: 'warning',
-      subtitle: 'spent'
+      subtitle: 'spent',
+      clickable: true,
+      path: '/expenses'
     },
     {
       title: 'Total Workers',
-      value: dashboardData?.summary?.totalWorkers || 0,
-      change: '+4.3%',
-      trend: 'up',
+      value: summary.totalWorkers || 0,
+      change: summary.workerChange || 0,
       icon: Users,
       color: 'info',
-      subtitle: 'active'
+      subtitle: 'active',
+      clickable: true,
+      path: '/workers'
     },
     {
-      title: 'Today\'s Reports',
-      value: dailyReports.filter(r => r.date === new Date().toISOString().split('T')[0]).length || 0,
-      change: '+2.1%',
-      trend: 'up',
+      title: "Today's Reports",
+      value: summary.todaysReports || 0,
+      change: summary.reportChange || 0,
       icon: FileText,
       color: 'primary',
-      subtitle: 'from site managers'
+      subtitle: 'from site managers',
+      clickable: true,
+      path: '/reports'
     },
     {
       title: 'Budget Utilization',
-      value: `${dashboardData?.summary?.budgetUtilization?.toFixed(1) || 0}%`,
-      change: '+6.8%',
-      trend: 'up',
+      value: `${summary.budgetUtilization?.toFixed(1) || 0}%`,
+      change: summary.utilizationChange || 0,
       icon: PieChart,
       color: 'warning',
       subtitle: 'used'
@@ -121,19 +139,19 @@ const ContractorDashboard = () => {
       <div className="dashboard-container">
         <div className="dashboard-header">
           <div>
-            <h1>Contractor Dashboard</h1>
-            <p>Real-time overview of all projects and site activities</p>
+            <h1>Welcome back, {userName}! 👋</h1>
+            <p>Here's your real-time project overview.</p>
           </div>
           <div className="header-actions">
-            <button className="btn-outline" onClick={fetchAllData}>
+            <button className="btn-outline" onClick={fetchDashboardData}>
               <RefreshCw size={18} />
-              Sync All
+              Refresh Data
             </button>
             <button className="btn-primary" onClick={() => navigate('/projects')}>
               <Plus size={18} />
               New Project
             </button>
-            <button className="btn-primary" onClick={() => toast.success('Report downloaded!')}>
+            <button className="btn-primary" onClick={() => toast.success('Report generated!')}>
               <Download size={18} />
               Export Report
             </button>
@@ -144,7 +162,7 @@ const ContractorDashboard = () => {
           {stats.map((stat, index) => (
             <motion.div 
               key={index} 
-              className="stat-card clickable"
+              className={`stat-card ${stat.clickable ? 'clickable' : ''}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
@@ -154,16 +172,24 @@ const ContractorDashboard = () => {
                 <div className={`stat-icon ${stat.color}`}>
                   <stat.icon size={20} />
                 </div>
-                <div className={`stat-change ${stat.trend}`}>
-                  {stat.trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                  {stat.change}
+                <div className={`stat-change ${getTrendClass(stat.change)}`}>
+                  {getTrendIcon(stat.change)}
+                  {formatPercentage(stat.change)}
                 </div>
               </div>
               <div className="stat-value">{stat.value}</div>
               <div className="stat-title">{stat.title}</div>
               <div className="stat-subtitle">{stat.subtitle}</div>
               <div className="stat-progress">
-                <div className="stat-progress-bar" style={{ width: `${Math.min(Math.random() * 80 + 20, 100)}%` }}></div>
+                <div 
+                  className="stat-progress-bar" 
+                  style={{ 
+                    width: `${Math.min(Math.abs(stat.change || 0) * 2 + 20, 100)}%`,
+                    background: getTrendClass(stat.change) === 'up' 
+                      ? 'linear-gradient(90deg, #10b981, #34d399)' 
+                      : 'linear-gradient(90deg, #ef4444, #f87171)'
+                  }}
+                />
               </div>
             </motion.div>
           ))}
@@ -215,50 +241,14 @@ const ContractorDashboard = () => {
                       </div>
                       <div className="progress-wrapper">
                         <div className="progress-bar">
-                          <div className="progress-fill" style={{ width: `${Math.min(project.utilization || 0, 100)}%` }}></div>
+                          <div className="progress-fill" style={{ width: `${Math.min(project.utilization || 0, 100)}%` }} />
                         </div>
                         <span className="progress-text">{(project.utilization || 0).toFixed(0)}%</span>
                       </div>
                     </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-
-            <div className="card">
-              <div className="card-header">
-                <h3>Daily Reports from Sites</h3>
-                <button className="btn-link" onClick={() => navigate('/reports')}>View All</button>
-              </div>
-              {dailyReports.length === 0 ? (
-                <div className="empty-state-small">
-                  <p>No daily reports yet</p>
-                </div>
-              ) : (
-                dailyReports.slice(0, 4).map((report, index) => (
-                  <motion.div 
-                    key={report.id} 
-                    className="report-item"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <div className="report-info">
-                      <div className="report-date">
-                        <Calendar size={14} />
-                        {report.date}
-                      </div>
-                      <div className="report-summary">
-                        <span>👷 {report.workersPresent} workers</span>
-                        <span>📦 {Object.keys(report.materialsUsed || {}).length} materials</span>
-                        <span>💰 ${report.totalExpenses?.toFixed(0) || 0}</span>
-                      </div>
-                    </div>
-                    <div className="report-status">
-                      <span className={`status-badge ${report.sentToContractor ? 'success' : 'warning'}`}>
-                        {report.sentToContractor ? '✅ Synced' : '⏳ Pending'}
-                      </span>
-                    </div>
+                    <button className="project-action" onClick={(e) => { e.stopPropagation(); navigate(`/projects`); }}>
+                      <Eye size={18} />
+                    </button>
                   </motion.div>
                 ))
               )}
@@ -279,43 +269,40 @@ const ContractorDashboard = () => {
                   <UserPlus size={18} />
                   <span>Manage Users</span>
                 </button>
+                <button className="quick-action" onClick={() => navigate('/workers')}>
+                  <Users size={18} />
+                  <span>Register Worker</span>
+                </button>
                 <button className="quick-action" onClick={() => navigate('/reports')}>
                   <BarChart3 size={18} />
                   <span>View Reports</span>
-                </button>
-                <button className="quick-action" onClick={fetchAllData}>
-                  <RefreshCw size={18} />
-                  <span>Sync Data</span>
                 </button>
               </div>
             </div>
 
             <div className="card">
               <div className="card-header">
-                <h3>Site Manager Status</h3>
+                <h3>Recent Activity</h3>
+                <button className="btn-link" onClick={() => navigate('/reports')}>View All</button>
               </div>
-              <div className="site-status">
-                <div className="status-item">
-                  <span className="status-label">Active Sites</span>
-                  <span className="status-value">{projects.filter(p => p.status === 'active').length}</span>
+              {dashboardData?.recentExpenses?.length === 0 ? (
+                <div className="empty-state-small">
+                  <p>No recent activity</p>
                 </div>
-                <div className="status-item">
-                  <span className="status-label">Reports Today</span>
-                  <span className="status-value">
-                    {dailyReports.filter(r => r.date === new Date().toISOString().split('T')[0]).length}
-                  </span>
-                </div>
-                <div className="status-item">
-                  <span className="status-label">Pending Sync</span>
-                  <span className="status-value">
-                    {dailyReports.filter(r => !r.sentToContractor).length}
-                  </span>
-                </div>
-                <div className="status-item highlight">
-                  <span className="status-label">Overall Status</span>
-                  <span className="status-value status-synced">🟢 All Systems Go</span>
-                </div>
-              </div>
+              ) : (
+                dashboardData?.recentExpenses?.slice(0, 3).map((expense, index) => (
+                  <div key={index} className="activity-item">
+                    <div className="activity-icon" style={{ background: '#6366f120', color: '#6366f1' }}>
+                      <DollarSign size={16} />
+                    </div>
+                    <div className="activity-content">
+                      <div className="activity-title">Expense Recorded</div>
+                      <div className="activity-description">{expense.category} - ${expense.amount}</div>
+                      <div className="activity-time">{new Date(expense.date).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

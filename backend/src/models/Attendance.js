@@ -37,6 +37,11 @@ const Attendance = sequelize.define('Attendance', {
     defaultValue: 0,
     field: 'hours_worked'
   },
+  overtimeHours: {
+    type: DataTypes.DECIMAL(5, 2),
+    defaultValue: 0,
+    field: 'overtime_hours'
+  },
   status: {
     type: DataTypes.ENUM('present', 'absent', 'half_day', 'leave'),
     defaultValue: 'present'

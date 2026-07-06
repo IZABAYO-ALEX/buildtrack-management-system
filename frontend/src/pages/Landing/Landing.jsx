@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import {
   Building2,
   Users,
@@ -23,22 +24,8 @@ import {
   Phone,
   MapPin,
   Award,
-  TrendingUp,
-  HardHat,
-  Calculator,
-  FileText,
-  Star,
-  Quote,
-  Clock,
-  Briefcase,
-  Home,
-  Globe,
-  MessageSquare,
-  Zap,
-  Target,
-  Eye
+  Star
 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
 import './Landing.css';
 
 const Landing = () => {
@@ -56,60 +43,11 @@ const Landing = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  const constructionImages = [
-    {
-      url: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1400&h=600&fit=crop&crop=center',
-      alt: 'Large construction building in progress - high rise building with cranes',
-      title: 'High-Rise Construction'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=600&h=400&fit=crop&crop=center',
-      alt: 'Construction workers on site with building structure',
-      title: 'Active Construction Site'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=600&h=400&fit=crop&crop=center',
-      alt: 'Modern building construction with scaffolding',
-      title: 'Modern Building Project'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&h=400&fit=crop&crop=center',
-      alt: 'Construction site with building structure and cranes',
-      title: 'Urban Development'
-    }
-  ];
-
   const features = [
-    { 
-      icon: <Building2 size={24} />, 
-      title: 'Project Management', 
-      description: 'Create and manage multiple construction projects with real-time tracking and milestone monitoring.' 
-    },
-    { 
-      icon: <DollarSign size={24} />, 
-      title: 'Expense Tracking', 
-      description: 'Record and categorize all project expenses with automated budget calculations and receipt management.' 
-    },
-    { 
-      icon: <Users size={24} />, 
-      title: 'Workforce Management', 
-      description: 'Track worker attendance, payments, performance analytics, and daily site operations.' 
-    },
-    { 
-      icon: <HardHat size={24} />, 
-      title: 'Site Management', 
-      description: 'Monitor daily site activities, material usage, and progress with real-time updates and reporting.' 
-    },
-    { 
-      icon: <BarChart3 size={24} />, 
-      title: 'Advanced Reporting', 
-      description: 'Generate comprehensive financial, operational, and performance reports with interactive dashboards.' 
-    },
-    { 
-      icon: <Shield size={24} />, 
-      title: 'Secure Platform', 
-      description: 'Enterprise-grade security with role-based access control, audit trails, and data encryption.' 
-    }
+    { icon: <Layers size={24} />, title: 'Project Management', description: 'Create and manage multiple construction projects with real-time tracking' },
+    { icon: <DollarSign size={24} />, title: 'Expense Tracking', description: 'Record and categorize all project expenses with receipt management' },
+    { icon: <Users size={24} />, title: 'Workforce Management', description: 'Track worker attendance, payments, and performance analytics' },
+    { icon: <Shield size={24} />, title: 'Secure Platform', description: 'Enterprise-grade security with role-based access control' }
   ];
 
   const testimonials = [
@@ -118,7 +56,7 @@ const Landing = () => {
       name: 'John Mukasa',
       role: 'Construction Director',
       company: 'Mukasa Construction Ltd',
-      quote: 'BuildTrack has revolutionized how we manage our construction projects. The real-time tracking and reporting capabilities are exceptional.',
+      quote: 'BuildTrack has completely transformed how we manage our projects.',
       rating: 5,
       avatar: 'JM'
     },
@@ -127,7 +65,7 @@ const Landing = () => {
       name: 'Sarah Nakato',
       role: 'Site Manager',
       company: 'Nakato Builders',
-      quote: 'The workforce management features have saved us countless hours. Tracking attendance and payments has never been easier.',
+      quote: 'The workforce management features have saved us countless hours.',
       rating: 5,
       avatar: 'SN'
     },
@@ -136,45 +74,11 @@ const Landing = () => {
       name: 'Peter Odongo',
       role: 'Accountant',
       company: 'Odongo & Associates',
-      quote: 'The financial reporting capabilities are outstanding. I can generate comprehensive reports in seconds, making decision-making effortless.',
+      quote: 'The reporting capabilities are outstanding. Reports in seconds!',
       rating: 5,
       avatar: 'PO'
     }
   ];
-
-  const blogPosts = [
-    {
-      id: 1,
-      title: '10 Essential Tips for Managing Large Construction Projects',
-      excerpt: 'Learn the best practices for managing multi-million dollar construction projects efficiently and successfully.',
-      date: 'June 28, 2026',
-      category: 'Project Management',
-      image: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=400&fit=crop&crop=center'
-    },
-    {
-      id: 2,
-      title: 'The Future of Construction Technology in Uganda',
-      excerpt: 'How AI, IoT, and digital twins are transforming the construction industry in East Africa.',
-      date: 'June 25, 2026',
-      category: 'Technology',
-      image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&h=400&fit=crop&crop=center'
-    },
-    {
-      id: 3,
-      title: 'Sustainable Building Practices for African Construction',
-      excerpt: 'Exploring green building techniques and sustainable materials for the African construction industry.',
-      date: 'June 22, 2026',
-      category: 'Sustainability',
-      image: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=800&h=400&fit=crop&crop=center'
-    }
-  ];
-
-  const scrollToSection = (id) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   return (
     <div className="landing-container">
@@ -182,14 +86,13 @@ const Landing = () => {
       <nav className="landing-nav">
         <div className="nav-container">
           <div className="nav-logo">
-            <Building2 size={32} className="logo-icon" />
+            <img src="/logo-small.svg" alt="BuildTrack" className="nav-logo-img" />
             <span className="logo-text">Build<span>Track</span></span>
           </div>
           <div className="nav-links">
-            <a href="#features" onClick={(e) => { e.preventDefault(); scrollToSection('features'); }}>Features</a>
-            <a href="#testimonials" onClick={(e) => { e.preventDefault(); scrollToSection('testimonials'); }}>Testimonials</a>
-            <a href="#blog" onClick={(e) => { e.preventDefault(); scrollToSection('blog'); }}>Blog</a>
-            <a href="#about" onClick={(e) => { e.preventDefault(); scrollToSection('about'); }}>About</a>
+            <a href="#features">Features</a>
+            <a href="#testimonials">Testimonials</a>
+            <a href="#about">About</a>
           </div>
           <div className="nav-actions">
             <button className="btn-login" onClick={() => navigate('/login')}>Sign In</button>
@@ -203,7 +106,7 @@ const Landing = () => {
         </div>
       </nav>
 
-      {/* Hero Section with Construction Image */}
+      {/* Hero Section */}
       <section className="hero-section-construction">
         <div className="hero-overlay-construction">
           <div className="hero-container-construction">
@@ -219,14 +122,13 @@ const Landing = () => {
               </div>
               
               <h1 className="hero-title-construction">
-                Building Africa's<br />
-                <span className="gradient-text-construction">Future, One Project</span><br />
-                <span className="gradient-text-construction">at a Time</span>
+                Build Smarter,<br />
+                <span className="gradient-text-construction">Track Better</span>
               </h1>
               
               <p className="hero-description-construction">
-                Transform your construction projects with BuildTrack's comprehensive management platform. 
-                From planning to completion, we help you build smarter, faster, and better.
+                Streamline your construction projects, track expenses, manage workforce, 
+                and make data-driven decisions with BuildTrack.
               </p>
 
               <div className="hero-buttons-construction">
@@ -236,23 +138,6 @@ const Landing = () => {
                 <button className="btn-hero-secondary-construction">
                   <Play size={20} /> Watch Demo
                 </button>
-              </div>
-
-              <div className="hero-stats-construction">
-                <div className="stat-item-construction">
-                  <span className="stat-number-construction">50+</span>
-                  <span className="stat-label-construction">Active Projects</span>
-                </div>
-                <div className="stat-divider-construction"></div>
-                <div className="stat-item-construction">
-                  <span className="stat-number-construction">2,000+</span>
-                  <span className="stat-label-construction">Workers Managed</span>
-                </div>
-                <div className="stat-divider-construction"></div>
-                <div className="stat-item-construction">
-                  <span className="stat-number-construction">$5M+</span>
-                  <span className="stat-label-construction">Budget Tracked</span>
-                </div>
               </div>
 
               <div className="hero-trust-construction">
@@ -274,19 +159,14 @@ const Landing = () => {
             >
               <div className="hero-image-wrapper-construction">
                 <img 
-                  src={constructionImages[0].url}
-                  alt={constructionImages[0].alt}
+                  src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1200&h=600&fit=crop&crop=center"
+                  alt="Construction building in progress"
                   className="hero-image-construction-img"
                 />
                 <div className="hero-image-overlay-construction">
                   <div className="overlay-content-construction">
                     <h3>Building Tomorrow's Landmarks</h3>
                     <p>Real Estate Development & Construction Management</p>
-                    <div className="overlay-tags-construction">
-                      <span>🏗️ High-Rise Buildings</span>
-                      <span>🏢 Commercial Projects</span>
-                      <span>🏠 Residential Development</span>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -300,7 +180,7 @@ const Landing = () => {
         <div className="features-container-construction">
           <div className="section-header-construction">
             <span className="section-badge-construction">Features</span>
-            <h2>Everything You Need to Manage Construction</h2>
+            <h2>Everything You Need</h2>
             <p>Comprehensive tools for successful project delivery</p>
           </div>
           <div className="features-grid-construction">
@@ -331,13 +211,13 @@ const Landing = () => {
             <p>Hear from construction professionals using BuildTrack daily</p>
           </div>
           <div className="testimonials-grid-construction">
-            {testimonials.map((testimonial, index) => (
+            {testimonials.map((testimonial) => (
               <motion.div
                 key={testimonial.id}
                 className="testimonial-card-construction"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                transition={{ duration: 0.6 }}
                 whileHover={{ y: -4 }}
               >
                 <div className="testimonial-rating-construction">
@@ -360,111 +240,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Blog Section */}
-      <section className="blog-section-construction" id="blog">
-        <div className="blog-container-construction">
-          <div className="section-header-construction">
-            <span className="section-badge-construction">Blog</span>
-            <h2>Latest Insights & Updates</h2>
-            <p>Expert advice and industry news for construction professionals</p>
-          </div>
-          <div className="blog-grid-construction">
-            {blogPosts.map((post, index) => (
-              <motion.div
-                key={post.id}
-                className="blog-card-construction"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ y: -8 }}
-              >
-                <div className="blog-image-construction">
-                  <img src={post.image} alt={post.title} />
-                  <span className="blog-category-construction">{post.category}</span>
-                </div>
-                <div className="blog-content-construction">
-                  <h3>{post.title}</h3>
-                  <p>{post.excerpt}</p>
-                  <div className="blog-meta-construction">
-                    <span className="blog-date-construction">{post.date}</span>
-                    <button className="blog-read-more-construction">Read More →</button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section className="about-section-construction" id="about">
-        <div className="about-container-construction">
-          <div className="about-grid-construction">
-            <motion.div 
-              className="about-content-construction"
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <span className="section-badge-construction">About Us</span>
-              <h2>Building Africa's Future</h2>
-              <p>
-                BuildTrack is a comprehensive construction management platform designed 
-                specifically for the African construction industry. We understand the unique 
-                challenges of construction in the region and provide tools to help you succeed.
-              </p>
-              <div className="about-features-construction">
-                <div className="about-feature-construction">
-                  <CheckCircle size={20} color="#10b981" />
-                  <span>Local expertise with global standards</span>
-                </div>
-                <div className="about-feature-construction">
-                  <CheckCircle size={20} color="#10b981" />
-                  <span>Supporting African construction professionals</span>
-                </div>
-                <div className="about-feature-construction">
-                  <CheckCircle size={20} color="#10b981" />
-                  <span>Transforming the construction industry</span>
-                </div>
-                <div className="about-feature-construction">
-                  <CheckCircle size={20} color="#10b981" />
-                  <span>Empowering site managers and contractors</span>
-                </div>
-              </div>
-              <div className="about-contact-construction">
-                <div className="contact-item-construction">
-                  <Mail size={18} />
-                  <span>info@buildtrack.com</span>
-                </div>
-                <div className="contact-item-construction">
-                  <Phone size={18} />
-                  <span>+256 701 234 567</span>
-                </div>
-                <div className="contact-item-construction">
-                  <MapPin size={18} />
-                  <span>Kampala, Uganda</span>
-                </div>
-              </div>
-            </motion.div>
-            <motion.div 
-              className="about-image-construction"
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <img 
-                src="https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=600&h=500&fit=crop&crop=center"
-                alt="Construction site in Uganda"
-              />
-              <div className="about-image-overlay-construction">
-                <h4>Since 2024</h4>
-                <p>Trusted by leading contractors in Africa</p>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="cta-section-construction">
         <div className="cta-container-construction">
@@ -475,10 +250,9 @@ const Landing = () => {
             transition={{ duration: 0.6 }}
           >
             <h2>Ready to Transform Your Construction Management?</h2>
-            <p>Join thousands of construction professionals who trust BuildTrack to manage their projects efficiently</p>
+            <p>Join thousands of construction professionals who trust BuildTrack</p>
             <button className="btn-cta-construction" onClick={() => navigate('/login')}>
-              Start Free Trial
-              <ArrowRight size={20} />
+              Start Free Trial <ArrowRight size={20} />
             </button>
           </motion.div>
         </div>
@@ -490,7 +264,7 @@ const Landing = () => {
           <div className="footer-grid-construction">
             <div className="footer-brand-construction">
               <div className="footer-logo-construction">
-                <Building2 size={32} className="logo-icon" />
+                <img src="/logo-small.svg" alt="BuildTrack" className="footer-logo-img" />
                 <span>Build<span>Track</span></span>
               </div>
               <p>Streamlining construction management for professionals across Africa.</p>
@@ -503,32 +277,29 @@ const Landing = () => {
             </div>
             <div className="footer-links-construction">
               <h4>Product</h4>
-              <a href="#features" onClick={(e) => { e.preventDefault(); scrollToSection('features'); }}>Features</a>
+              <a href="#features">Features</a>
               <a href="#">Pricing</a>
               <a href="#">Integrations</a>
-              <a href="#">Changelog</a>
             </div>
             <div className="footer-links-construction">
               <h4>Company</h4>
-              <a href="#about" onClick={(e) => { e.preventDefault(); scrollToSection('about'); }}>About</a>
-              <a href="#blog" onClick={(e) => { e.preventDefault(); scrollToSection('blog'); }}>Blog</a>
+              <a href="#">About</a>
+              <a href="#">Blog</a>
               <a href="#">Careers</a>
-              <a href="#">Contact</a>
             </div>
             <div className="footer-links-construction">
               <h4>Support</h4>
               <a href="#">Help Center</a>
               <a href="#">Documentation</a>
               <a href="#">API</a>
-              <a href="#">Status</a>
             </div>
           </div>
           <div className="footer-bottom-construction">
             <p>&copy; 2026 BuildTrack. All rights reserved.</p>
             <div className="footer-legal-construction">
-              <a href="#">Privacy Policy</a>
-              <a href="#">Terms of Service</a>
-              <a href="#">Cookie Policy</a>
+              <a href="#">Privacy</a>
+              <a href="#">Terms</a>
+              <a href="#">Cookies</a>
             </div>
           </div>
         </div>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background -->
+  <rect width="200" height="200" rx="40" fill="#6366F1"/>
+  
+  <!-- Building Icon -->
+  <g transform="translate(60, 30)">
+    <!-- Building body -->
+    <rect x="0" y="30" width="80" height="110" rx="4" fill="white" opacity="0.95"/>
+    
+    <!-- Roof -->
+    <polygon points="40,0 0,30 80,30" fill="white" opacity="0.9"/>
+    <polygon points="40,0 20,15 60,15" fill="#818CF8"/>
+    
+    <!-- Windows -->
+    <g fill="#818CF8">
+      <!-- Top row -->
+      <rect x="10" y="40" width="15" height="20" rx="2"/>
+      <rect x="35" y="40" width="15" height="20" rx="2"/>
+      <rect x="55" y="40" width="15" height="20" rx="2"/>
+      <!-- Middle row -->
+      <rect x="10" y="70" width="15" height="20" rx="2"/>
+      <rect x="35" y="70" width="15" height="20" rx="2"/>
+      <rect x="55" y="70" width="15" height="20" rx="2"/>
+      <!-- Bottom row -->
+      <rect x="10" y="100" width="15" height="20" rx="2"/>
+      <rect x="35" y="100" width="15" height="20" rx="2"/>
+      <rect x="55" y="100" width="15" height="20" rx="2"/>
+    </g>
+    
+    <!-- Door -->
+    <rect x="30" y="115" width="20" height="25" rx="2" fill="#6366F1"/>
+    <circle cx="44" cy="128" r="2" fill="white"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="100" y="185" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="white" text-anchor="middle" letter-spacing="2">
+    BuildTrack
+  </text>
+</svg>

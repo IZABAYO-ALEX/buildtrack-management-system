@@ -335,3 +335,222 @@
     width: 100px !important;
   }
 }
+/* Logo Styles */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.logo-icon-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.logo span span {
+  color: #6366f1;
+}
+
+/* Topbar Logo */
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.topbar-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar-left .page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.topbar-left .page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Sidebar collapsed logo */
+.dashboard-layout.collapsed .logo-icon-img {
+  width: 28px;
+  height: 28px;
+}
+
+.dashboard-layout.collapsed .logo {
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .topbar-logo-img {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .topbar-left .page-title {
+    font-size: 16px;
+  }
+}
+/* Logo Styles */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.logo-icon-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.logo span span {
+  color: #6366f1;
+}
+
+/* Topbar Logo */
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.topbar-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar-left .page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.topbar-left .page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Sidebar collapsed logo */
+.dashboard-layout.collapsed .logo-icon-img {
+  width: 28px;
+  height: 28px;
+}
+
+.dashboard-layout.collapsed .logo {
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .topbar-logo-img {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .topbar-left .page-title {
+    font-size: 16px;
+  }
+}
+/* Logo Styles */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.logo-icon-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.logo span span {
+  color: #6366f1;
+}
+
+/* Topbar Logo */
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.topbar-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar-left .page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.topbar-left .page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Sidebar collapsed logo */
+.dashboard-layout.collapsed .logo-icon-img {
+  width: 28px;
+  height: 28px;
+}
+
+.dashboard-layout.collapsed .logo {
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .topbar-logo-img {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .topbar-left .page-title {
+    font-size: 16px;
+  }
+}

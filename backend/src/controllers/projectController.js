@@ -4,6 +4,7 @@ import Worker from '../models/Worker.js';
 import User from '../models/User.js';
 import Audit from '../models/Audit.js';
 import { v4 as uuidv4 } from 'uuid';
+import { Op } from 'sequelize';
 import logger from '../utils/logger.js';
 
 const generateProjectCode = () => {
@@ -25,6 +26,7 @@ export const createProject = async (req, res) => {
       description,
       location,
       budget,
+      contractValue,
       currency,
       startDate,
       endDate,
@@ -40,11 +42,9 @@ export const createProject = async (req, res) => {
       accountantId,
       tags,
       riskLevel,
-      notes,
-      metadata
+      notes
     } = req.body;
 
-    // Validate required fields
     if (!name || name.length < 3) {
       return res.status(400).json({
         success: false,
@@ -59,7 +59,6 @@ export const createProject = async (req, res) => {
       });
     }
 
-    // Generate project code
     const projectCode = generateProjectCode();
 
     const project = await Project.create({
@@ -71,6 +70,7 @@ export const createProject = async (req, res) => {
       description,
       location,
       budget,
+      contractValue: contractValue || budget,
       currency: currency || 'UGX',
       startDate,
       endDate,
@@ -88,14 +88,12 @@ export const createProject = async (req, res) => {
       tags: tags || [],
       riskLevel: riskLevel || 'medium',
       notes,
-      metadata: metadata || {},
       progress: 0,
       completionPercentage: 0,
       actualCost: 0,
       isArchived: false
     });
 
-    // Log audit
     await Audit.create({
       userId: req.user.id,
       action: 'CREATE_PROJECT',
@@ -134,10 +132,36 @@ export const getProjects = async (req, res) => {
     const projects = await Project.findAll({
       where,
       include: [
-        { model: Expense, attributes: ['id', 'amount'] },
-        { model: Worker, attributes: ['id'] },
-        { model: User, as: 'siteManager', attributes: ['id', 'fullName'] },
-        { model: User, as: 'accountant', attributes: ['id', 'fullName'] }
+        { 
+          model: Expense, 
+          as: 'expenses', 
+          attributes: ['id', 'amount'],
+          required: false
+        },
+        { 
+          model: Worker, 
+          as: 'workers', 
+          attributes: ['id'],
+          required: false
+        },
+        {
+          model: User,
+          as: 'contractor',
+          attributes: ['id', 'fullName', 'email'],
+          required: false
+        },
+        {
+          model: User,
+          as: 'siteManager',
+          attributes: ['id', 'fullName', 'email'],
+          required: false
+        },
+        {
+          model: User,
+          as: 'accountant',
+          attributes: ['id', 'fullName', 'email'],
+          required: false
+        }
       ],
       order: [['created_at', 'DESC']],
       limit: parseInt(limit),
@@ -147,7 +171,7 @@ export const getProjects = async (req, res) => {
     const total = await Project.count({ where });
 
     const projectsWithMetrics = projects.map(project => {
-      const totalExpenses = project.Expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
+      const totalExpenses = project.expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
       const remainingBudget = project.budget - totalExpenses;
       const budgetUtilization = project.budget > 0 ? (totalExpenses / project.budget) * 100 : 0;
 
@@ -156,7 +180,7 @@ export const getProjects = async (req, res) => {
         totalExpenses,
         remainingBudget,
         budgetUtilization,
-        workerCount: project.Workers?.length || 0
+        workerCount: project.workers?.length || 0
       };
     });
 
@@ -180,10 +204,30 @@ export const getProjectById = async (req, res) => {
   try {
     const project = await Project.findByPk(req.params.id, {
       include: [
-        { model: Expense, attributes: ['id', 'amount', 'category', 'description', 'date'] },
-        { model: Worker, attributes: ['id', 'fullName', 'role'] },
-        { model: User, as: 'siteManager', attributes: ['id', 'fullName', 'email'] },
-        { model: User, as: 'accountant', attributes: ['id', 'fullName', 'email'] }
+        { 
+          model: Expense, 
+          as: 'expenses', 
+          attributes: ['id', 'amount', 'category', 'description', 'date'],
+          required: false
+        },
+        { 
+          model: Worker, 
+          as: 'workers', 
+          attributes: ['id', 'fullName', 'role'],
+          required: false
+        },
+        {
+          model: User,
+          as: 'siteManager',
+          attributes: ['id', 'fullName', 'email'],
+          required: false
+        },
+        {
+          model: User,
+          as: 'accountant',
+          attributes: ['id', 'fullName', 'email'],
+          required: false
+        }
       ]
     });
 
@@ -191,7 +235,7 @@ export const getProjectById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    const totalExpenses = project.Expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
+    const totalExpenses = project.expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
     const remainingBudget = project.budget - totalExpenses;
     const budgetUtilization = project.budget > 0 ? (totalExpenses / project.budget) * 100 : 0;
 
@@ -202,7 +246,7 @@ export const getProjectById = async (req, res) => {
         totalExpenses,
         remainingBudget,
         budgetUtilization,
-        workerCount: project.Workers?.length || 0
+        workerCount: project.workers?.length || 0
       }
     });
   } catch (error) {

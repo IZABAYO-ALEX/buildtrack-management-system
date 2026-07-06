@@ -5,6 +5,7 @@ import Worker from '../models/Worker.js';
 import Material from '../models/Material.js';
 import Attendance from '../models/Attendance.js';
 import WorkerPayment from '../models/WorkerPayment.js';
+import { Op } from 'sequelize';
 import logger from '../utils/logger.js';
 
 export const getBudgetVsActual = async (req, res) => {
@@ -15,11 +16,11 @@ export const getBudgetVsActual = async (req, res) => {
 
     const projects = await Project.findAll({
       where,
-      include: [{ model: Expense, attributes: ['amount'] }]
+      include: [{ model: Expense, as: 'expenses', attributes: ['amount'] }]
     });
 
     const data = projects.map(p => {
-      const actual = p.Expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      const actual = p.expenses?.reduce((sum, e) => sum + parseFloat(e.amount), 0) || 0;
       return {
         name: p.name,
         budget: parseFloat(p.budget),
@@ -55,14 +56,14 @@ export const getProjectProgress = async (req, res) => {
     const projects = await Project.findAll({
       where,
       include: [
-        { model: Expense, attributes: ['amount', 'date'] },
-        { model: Worker, attributes: ['id'] },
-        { model: Material, attributes: ['id', 'quantity', 'consumedQuantity'] }
+        { model: Expense, as: 'expenses', attributes: ['amount', 'date'] },
+        { model: Worker, as: 'workers', attributes: ['id'] },
+        { model: Material, as: 'materials', attributes: ['id', 'quantity', 'consumedQuantity'] }
       ]
     });
 
     const data = projects.map(p => {
-      const totalExpenses = p.Expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      const totalExpenses = p.expenses?.reduce((sum, e) => sum + parseFloat(e.amount), 0) || 0;
       const progress = p.budget > 0 ? (totalExpenses / p.budget) * 100 : 0;
       
       const start = new Date(p.startDate);
@@ -78,8 +79,8 @@ export const getProjectProgress = async (req, res) => {
         budgetProgress: Math.min(progress, 100),
         timelineProgress: Math.min(timelineProgress, 100),
         status: p.status,
-        workers: p.Workers.length,
-        materials: p.Materials.length,
+        workers: p.workers?.length || 0,
+        materials: p.materials?.length || 0,
         totalExpenses
       };
     });
@@ -99,7 +100,7 @@ export const getWorkerProductivity = async (req, res) => {
 
     const attendance = await Attendance.findAll({
       where,
-      include: [{ model: Worker, attributes: ['id', 'fullName', 'role'] }]
+      include: [{ model: Worker, as: 'worker', attributes: ['id', 'fullName', 'role'] }]
     });
 
     const payments = await WorkerPayment.findAll({
@@ -110,8 +111,8 @@ export const getWorkerProductivity = async (req, res) => {
     attendance.forEach(a => {
       if (!workerStats[a.workerId]) {
         workerStats[a.workerId] = {
-          name: a.Worker?.fullName || 'Unknown',
-          role: a.Worker?.role || 'Unknown',
+          name: a.worker?.fullName || 'Unknown',
+          role: a.worker?.role || 'Unknown',
           totalHours: 0,
           totalDays: 0,
           presentDays: 0,
@@ -244,16 +245,15 @@ export const getProfitLoss = async (req, res) => {
     const projects = await Project.findAll({
       where,
       include: [
-        { model: Expense },
-        { model: WorkerPayment },
-        { model: Material }
+        { model: Expense, as: 'expenses' },
+        { model: WorkerPayment }
       ]
     });
 
     const data = projects.map(p => {
-      const expenses = p.Expenses.reduce((s, e) => s + parseFloat(e.amount), 0);
-      const labor = p.WorkerPayments.reduce((s, w) => s + parseFloat(w.amount), 0);
-      const materials = p.Materials.reduce((s, m) => s + parseFloat(m.totalCost || 0), 0);
+      const expenses = p.expenses?.reduce((s, e) => s + parseFloat(e.amount), 0) || 0;
+      const labor = p.WorkerPayments?.reduce((s, w) => s + parseFloat(w.amount), 0) || 0;
+      const materials = p.Materials?.reduce((s, m) => s + parseFloat(m.totalCost || 0), 0) || 0;
       const totalCost = expenses + labor + materials;
       const revenue = parseFloat(p.budget);
       const profit = revenue - totalCost;

@@ -62,6 +62,16 @@ const Expense = sequelize.define('Expense', {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'approved_at'
+  },
+  approvalNotes: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'approval_notes'
+  },
+  rejectionReason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'rejection_reason'
   }
 }, {
   tableName: 'expenses',

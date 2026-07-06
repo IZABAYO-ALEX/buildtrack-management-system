@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import { 
   DollarSign, TrendingUp, Calendar, Clock, 
   ArrowUpRight, ArrowDownRight, Eye, Download,
@@ -16,211 +17,48 @@ import './Dashboard.css';
 
 const AccountantDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState({
-    summary: {
-      totalRevenue: 0,
-      totalExpenses: 0,
-      netProfit: 0,
-      pendingApprovals: 0,
-      totalProjects: 0,
-      approvedExpenses: 0,
-      totalPayments: 0,
-      pendingPayments: 0,
-      totalWorkers: 0,
-      materialCosts: 0
-    },
-    recentExpenses: [],
-    recentPayments: [],
-    budgetUtilization: [],
-    expenseBreakdown: [],
-    projects: []
-  });
-  const [reports, setReports] = useState([]);
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
 
   useEffect(() => {
-    fetchAllData();
+    fetchDashboardData();
   }, []);
 
-  const fetchAllData = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch all required data
-      const [expensesRes, projectsRes, paymentsRes, workersRes, materialsRes, reportsRes] = await Promise.all([
-        api.get('/expenses'),
-        api.get('/projects'),
-        api.get('/workers'),
-        api.get('/materials'),
-        api.get('/reports/budget')
-      ]);
-
-      const expenses = expensesRes.data.data || [];
-      const projects = projectsRes.data.data || [];
-      const payments = paymentsRes.data.data || [];
-      const workers = workersRes.data.data || [];
-      const materials = materialsRes.data.data || [];
-      const budgetData = reportsRes.data.data || { projects: [] };
-
-      // Calculate summary statistics
-      const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
-      const totalRevenue = projects.reduce((sum, p) => sum + parseFloat(p.budget || 0), 0);
-      const totalPayments = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
-      const pendingApprovals = expenses.filter(e => e.status === 'pending').length;
-      const approvedExpenses = expenses.filter(e => e.status === 'approved').length;
-      const materialCosts = materials.reduce((sum, m) => sum + parseFloat(m.totalCost || 0), 0);
-      const totalWorkers = workers.filter(w => w.isActive).length;
-
-      // Calculate budget utilization by project
-      const budgetUtilization = budgetData.projects.map(p => ({
-        name: p.name,
-        budget: p.budget,
-        spent: p.spent || 0,
-        remaining: p.remaining || 0,
-        utilization: p.utilization || 0
-      }));
-
-      // Expense breakdown by category
-      const expenseBreakdown = {};
-      expenses.forEach(e => {
-        if (!expenseBreakdown[e.category]) {
-          expenseBreakdown[e.category] = 0;
-        }
-        expenseBreakdown[e.category] += parseFloat(e.amount || 0);
-      });
-
-      const expenseBreakdownArray = Object.keys(expenseBreakdown).map(key => ({
-        category: key,
-        amount: expenseBreakdown[key]
-      }));
-
-      // Recent expenses (last 10)
-      const recentExpenses = expenses
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 10);
-
-      // Recent payments
-      const recentPayments = payments
-        .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
-        .slice(0, 10);
-
-      setDashboardData({
-        summary: {
-          totalRevenue,
-          totalExpenses,
-          netProfit: totalRevenue - totalExpenses,
-          pendingApprovals,
-          totalProjects: projects.length,
-          approvedExpenses,
-          totalPayments,
-          pendingPayments: payments.filter(p => p.status === 'pending').length,
-          totalWorkers,
-          materialCosts
-        },
-        recentExpenses,
-        recentPayments,
-        budgetUtilization,
-        expenseBreakdown: expenseBreakdownArray,
-        projects
-      });
-
-      setReports(reportsRes.data.data || []);
-
+      const response = await api.get('/dashboard/accountant');
+      setDashboardData(response.data.data);
     } catch (error) {
       toast.error('Failed to fetch dashboard data');
-      console.error('Dashboard error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExportReport = async () => {
-    try {
-      const response = await api.get('/reports/expenses');
-      toast.success('Report downloaded successfully!');
-    } catch (error) {
-      toast.error('Failed to download report');
-    }
-  };
-
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-UG', {
-      style: 'currency',
-      currency: 'UGX',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+    if (!amount) return '$0';
+    return `$${Number(amount).toLocaleString()}`;
   };
 
-  const statCards = [
-    {
-      title: 'Total Revenue',
-      value: formatCurrency(dashboardData.summary.totalRevenue),
-      change: '+15%',
-      trend: 'up',
-      icon: DollarSign,
-      color: 'success',
-      subtitle: 'this quarter',
-      clickable: true,
-      path: '/reports'
-    },
-    {
-      title: 'Total Expenses',
-      value: formatCurrency(dashboardData.summary.totalExpenses),
-      change: '-8%',
-      trend: 'down',
-      icon: CreditCard,
-      color: 'danger',
-      subtitle: 'this quarter',
-      clickable: true,
-      path: '/expenses'
-    },
-    {
-      title: 'Net Profit',
-      value: formatCurrency(dashboardData.summary.netProfit),
-      change: '+12%',
-      trend: 'up',
-      icon: TrendingUp,
-      color: 'primary',
-      subtitle: 'this quarter',
-      clickable: true,
-      path: '/reports/profitability'
-    },
-    {
-      title: 'Pending Approvals',
-      value: dashboardData.summary.pendingApprovals,
-      change: '-3',
-      trend: 'down',
-      icon: Clock,
-      color: 'warning',
-      subtitle: 'need review',
-      clickable: true,
-      path: '/expenses'
-    },
-    {
-      title: 'Total Payments',
-      value: formatCurrency(dashboardData.summary.totalPayments),
-      change: '+5%',
-      trend: 'up',
-      icon: Wallet,
-      color: 'info',
-      subtitle: 'processed',
-      clickable: true,
-      path: '/reports/workers'
-    },
-    {
-      title: 'Material Costs',
-      value: formatCurrency(dashboardData.summary.materialCosts),
-      change: '+2%',
-      trend: 'up',
-      icon: Package,
-      color: 'primary',
-      subtitle: 'total',
-      clickable: true,
-      path: '/materials'
-    }
-  ];
+  const formatPercentage = (value) => {
+    if (!value) return '0%';
+    const num = Number(value);
+    return `${num > 0 ? '+' : ''}${num.toFixed(1)}%`;
+  };
+
+  const getTrendClass = (value) => {
+    if (value === undefined || value === null) return 'neutral';
+    return value >= 0 ? 'up' : 'down';
+  };
+
+  const getTrendIcon = (value) => {
+    if (value === undefined || value === null) return null;
+    return value >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />;
+  };
+
+  const userName = user?.fullName || user?.name || 'Accountant';
 
   if (loading) {
     return (
@@ -233,20 +71,73 @@ const AccountantDashboard = () => {
     );
   }
 
+  const summary = dashboardData?.summary || {};
+
+  const stats = [
+    {
+      title: 'Total Revenue',
+      value: formatCurrency(summary.totalRevenue),
+      change: summary.revenueChange || 0,
+      icon: DollarSign,
+      color: 'success',
+      subtitle: `Projects: ${summary.totalProjects || 0}`
+    },
+    {
+      title: 'Total Expenses',
+      value: formatCurrency(summary.totalExpenses),
+      change: summary.expenseChange || 0,
+      icon: CreditCard,
+      color: 'danger',
+      subtitle: `${summary.pendingApprovals || 0} pending approvals`
+    },
+    {
+      title: 'Net Profit',
+      value: formatCurrency(summary.netProfit),
+      change: summary.profitChange || 0,
+      icon: TrendingUp,
+      color: 'primary',
+      subtitle: `Margin: ${summary.profitMargin?.toFixed(1) || 0}%`
+    },
+    {
+      title: 'Total Payments',
+      value: formatCurrency(summary.totalPayments),
+      change: summary.revenueChange || 0,
+      icon: Wallet,
+      color: 'info',
+      subtitle: 'processed'
+    },
+    {
+      title: 'Material Costs',
+      value: formatCurrency(summary.materialCosts),
+      change: summary.expenseChange || 0,
+      icon: Package,
+      color: 'primary',
+      subtitle: 'total'
+    },
+    {
+      title: 'Pending Approvals',
+      value: summary.pendingApprovals || 0,
+      change: -3,
+      icon: Clock,
+      color: 'warning',
+      subtitle: 'need review'
+    }
+  ];
+
   return (
     <DashboardLayout userRole="accountant">
       <div className="dashboard-container">
         <div className="dashboard-header">
           <div>
-            <h1>💰 Accountant Dashboard</h1>
-            <p>Real-time financial overview of all projects</p>
+            <h1>Welcome back, {userName}! 💰</h1>
+            <p>Real-time financial overview of all projects.</p>
           </div>
           <div className="header-actions">
-            <button className="btn-outline" onClick={fetchAllData}>
+            <button className="btn-outline" onClick={fetchDashboardData}>
               <RefreshCw size={18} />
               Refresh Data
             </button>
-            <button className="btn-primary" onClick={handleExportReport}>
+            <button className="btn-primary" onClick={() => toast.success('Report downloaded!')}>
               <Download size={18} />
               Export Report
             </button>
@@ -254,29 +145,36 @@ const AccountantDashboard = () => {
         </div>
 
         <div className="stats-grid">
-          {statCards.map((stat, index) => (
+          {stats.map((stat, index) => (
             <motion.div 
               key={index} 
-              className={`stat-card ${stat.clickable ? 'clickable' : ''}`}
+              className="stat-card"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              onClick={() => stat.clickable && stat.path && navigate(stat.path)}
             >
               <div className="stat-header">
                 <div className={`stat-icon ${stat.color}`}>
                   <stat.icon size={20} />
                 </div>
-                <div className={`stat-change ${stat.trend}`}>
-                  {stat.trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                  {stat.change}
+                <div className={`stat-change ${getTrendClass(stat.change)}`}>
+                  {getTrendIcon(stat.change)}
+                  {formatPercentage(stat.change)}
                 </div>
               </div>
               <div className="stat-value">{stat.value}</div>
               <div className="stat-title">{stat.title}</div>
               <div className="stat-subtitle">{stat.subtitle}</div>
               <div className="stat-progress">
-                <div className="stat-progress-bar" style={{ width: `${Math.min(Math.random() * 80 + 20, 100)}%` }}></div>
+                <div 
+                  className="stat-progress-bar" 
+                  style={{ 
+                    width: `${Math.min(Math.abs(stat.change || 0) * 2 + 20, 100)}%`,
+                    background: getTrendClass(stat.change) === 'up' 
+                      ? 'linear-gradient(90deg, #10b981, #34d399)' 
+                      : 'linear-gradient(90deg, #ef4444, #f87171)'
+                  }}
+                />
               </div>
             </motion.div>
           ))}
@@ -289,14 +187,14 @@ const AccountantDashboard = () => {
                 <h3>Recent Expenses</h3>
                 <button className="btn-link" onClick={() => navigate('/expenses')}>View All</button>
               </div>
-              {dashboardData.recentExpenses.length === 0 ? (
+              {dashboardData?.recentExpenses?.length === 0 ? (
                 <div className="empty-state-small">
                   <p>No expenses recorded yet</p>
                 </div>
               ) : (
-                dashboardData.recentExpenses.map((expense, index) => (
+                dashboardData?.recentExpenses?.slice(0, 5).map((expense, index) => (
                   <motion.div 
-                    key={expense.id} 
+                    key={index} 
                     className="expense-item"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -305,54 +203,10 @@ const AccountantDashboard = () => {
                     <div className="expense-info">
                       <span className="expense-category">{expense.category}</span>
                       <span className="expense-date">{expense.date}</span>
-                      <span className="expense-project">
-                        {dashboardData.projects.find(p => p.id === expense.projectId)?.name || 'Unknown'}
-                      </span>
                     </div>
                     <div className="expense-actions">
                       <span className="expense-amount">${expense.amount?.toLocaleString()}</span>
                       <span className={`status-badge ${expense.status}`}>{expense.status}</span>
-                      <button className="icon-btn" onClick={() => navigate(`/expenses`)}>
-                        <Eye size={16} />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-
-            <div className="card">
-              <div className="card-header">
-                <h3>Budget Utilization</h3>
-                <button className="btn-link" onClick={() => navigate('/reports/budget')}>View All</button>
-              </div>
-              {dashboardData.budgetUtilization.length === 0 ? (
-                <div className="empty-state-small">
-                  <p>No budget data available</p>
-                </div>
-              ) : (
-                dashboardData.budgetUtilization.slice(0, 5).map((project, index) => (
-                  <motion.div 
-                    key={index} 
-                    className="budget-item"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <div className="budget-info">
-                      <span className="budget-name">{project.name}</span>
-                      <span className="budget-amount">
-                        ${project.spent?.toLocaleString()} / ${project.budget?.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="budget-progress">
-                      <div className="progress-bar">
-                        <div 
-                          className={`progress-fill ${project.utilization > 80 ? 'danger' : project.utilization > 60 ? 'warning' : ''}`}
-                          style={{ width: `${Math.min(project.utilization || 0, 100)}%` }}
-                        ></div>
-                      </div>
-                      <span className="budget-percentage">{(project.utilization || 0).toFixed(0)}%</span>
                     </div>
                   </motion.div>
                 ))
@@ -366,52 +220,11 @@ const AccountantDashboard = () => {
                 <h3>Financial Summary</h3>
               </div>
               <div className="financial-summary">
-                <div className="summary-row">
-                  <span>Revenue</span>
-                  <span>{formatCurrency(dashboardData.summary.totalRevenue)}</span>
-                </div>
-                <div className="summary-row">
-                  <span>Expenses</span>
-                  <span>{formatCurrency(dashboardData.summary.totalExpenses)}</span>
-                </div>
-                <div className="summary-row highlight">
-                  <span>Net Profit</span>
-                  <span className={dashboardData.summary.netProfit >= 0 ? 'positive' : 'negative'}>
-                    {formatCurrency(dashboardData.summary.netProfit)}
-                  </span>
-                </div>
-                <div className="summary-row">
-                  <span>Pending Approvals</span>
-                  <span>{dashboardData.summary.pendingApprovals}</span>
-                </div>
-                <div className="summary-row">
-                  <span>Total Payments</span>
-                  <span>{formatCurrency(dashboardData.summary.totalPayments)}</span>
-                </div>
-                <div className="summary-row">
-                  <span>Active Workers</span>
-                  <span>{dashboardData.summary.totalWorkers}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="card-header">
-                <h3>Expense Categories</h3>
-              </div>
-              <div className="expense-categories">
-                {dashboardData.expenseBreakdown.length === 0 ? (
-                  <div className="empty-state-small">
-                    <p>No expense data</p>
-                  </div>
-                ) : (
-                  dashboardData.expenseBreakdown.slice(0, 6).map((item, index) => (
-                    <div key={index} className="category-item">
-                      <span className="category-name">{item.category}</span>
-                      <span className="category-amount">{formatCurrency(item.amount)}</span>
-                    </div>
-                  ))
-                )}
+                <div><span>Revenue</span><span>{formatCurrency(summary.totalRevenue)}</span></div>
+                <div><span>Expenses</span><span>{formatCurrency(summary.totalExpenses)}</span></div>
+                <div><span>Profit</span><span className="positive">{formatCurrency(summary.netProfit)}</span></div>
+                <div><span>Projects</span><span>{summary.totalProjects || 0}</span></div>
+                <div><span>Workers</span><span>{summary.totalWorkers || 0}</span></div>
               </div>
             </div>
 
@@ -432,7 +245,7 @@ const AccountantDashboard = () => {
                   <BarChart3 size={18} />
                   <span>View Analytics</span>
                 </button>
-                <button className="quick-action" onClick={fetchAllData}>
+                <button className="quick-action" onClick={fetchDashboardData}>
                   <RefreshCw size={18} />
                   <span>Refresh Data</span>
                 </button>

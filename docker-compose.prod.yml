@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: buildtrack-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+    networks:
+      - buildtrack-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: buildtrack-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-buildtrack_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password}
+      POSTGRES_DB: ${DB_NAME:-buildtrack_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - buildtrack-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-buildtrack_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: buildtrack-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - buildtrack-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: buildtrack-backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_DIALECT: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-buildtrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-secure_password}
+      DB_NAME: ${DB_NAME:-buildtrack_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      SENTRY_DSN: ${SENTRY_DSN}
+      ELASTICSEARCH_URL: ${ELASTICSEARCH_URL}
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      AWS_BUCKET: ${AWS_BUCKET}
+      AWS_REGION: ${AWS_REGION}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - buildtrack-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: buildtrack-frontend
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - buildtrack-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+    container_name: buildtrack-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
+    networks:
+      - buildtrack-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+
+networks:
+  buildtrack-network:
+    driver: bridge

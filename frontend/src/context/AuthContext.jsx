@@ -23,10 +23,12 @@ export const AuthProvider = ({ children }) => {
       const userData = response.data.data;
       console.log('👤 User fetched:', userData);
       setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('userRole', userData.role);
     } catch (error) {
       console.error('❌ Fetch user error:', error);
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       localStorage.removeItem('userRole');
       setToken(null);
     } finally {
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setToken(token);
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('userRole', user.role);
       
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -62,6 +65,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     localStorage.removeItem('userRole');
     delete api.defaults.headers.common['Authorization'];
   };

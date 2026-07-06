@@ -10,10 +10,7 @@ const Project = sequelize.define('Project', {
   name: {
     type: DataTypes.STRING(255),
     allowNull: false,
-    validate: {
-      len: [3, 255],
-      notEmpty: true
-    }
+    validate: { len: [3, 255] }
   },
   projectCode: {
     type: DataTypes.STRING(50),
@@ -29,9 +26,7 @@ const Project = sequelize.define('Project', {
     type: DataTypes.STRING(255),
     allowNull: true,
     field: 'client_email',
-    validate: {
-      isEmail: true
-    }
+    validate: { isEmail: true }
   },
   clientPhone: {
     type: DataTypes.STRING(20),
@@ -50,9 +45,13 @@ const Project = sequelize.define('Project', {
     type: DataTypes.DECIMAL(15, 2),
     allowNull: false,
     defaultValue: 0,
-    validate: {
-      min: 0
-    }
+    validate: { min: 0 }
+  },
+  contractValue: {
+    type: DataTypes.DECIMAL(15, 2),
+    allowNull: true,
+    field: 'contract_value',
+    validate: { min: 0 }
   },
   currency: {
     type: DataTypes.STRING(10),
@@ -89,25 +88,19 @@ const Project = sequelize.define('Project', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true,
     field: 'site_area',
-    validate: {
-      min: 0
-    }
+    validate: { min: 0 }
   },
   numberOfUnits: {
     type: DataTypes.INTEGER,
     allowNull: true,
     field: 'number_of_units',
-    validate: {
-      min: 0
-    }
+    validate: { min: 0 }
   },
   numberOfFloors: {
     type: DataTypes.INTEGER,
     allowNull: true,
     field: 'number_of_floors',
-    validate: {
-      min: 0
-    }
+    validate: { min: 0 }
   },
   completionDate: {
     type: DataTypes.DATEONLY,
@@ -145,27 +138,19 @@ const Project = sequelize.define('Project', {
   progress: {
     type: DataTypes.DECIMAL(5, 2),
     defaultValue: 0,
-    validate: {
-      min: 0,
-      max: 100
-    }
+    validate: { min: 0, max: 100 }
   },
   completionPercentage: {
     type: DataTypes.DECIMAL(5, 2),
     defaultValue: 0,
     field: 'completion_percentage',
-    validate: {
-      min: 0,
-      max: 100
-    }
+    validate: { min: 0, max: 100 }
   },
   actualCost: {
     type: DataTypes.DECIMAL(15, 2),
     defaultValue: 0,
     field: 'actual_cost',
-    validate: {
-      min: 0
-    }
+    validate: { min: 0 }
   },
   riskLevel: {
     type: DataTypes.ENUM('low', 'medium', 'high'),

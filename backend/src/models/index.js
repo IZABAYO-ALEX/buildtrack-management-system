@@ -6,58 +6,59 @@ import WorkerPayment from './WorkerPayment.js';
 import Material from './Material.js';
 import User from './User.js';
 import DailyReport from './DailyReport.js';
+import Milestone from './Milestone.js';
 import Request from './Request.js';
 import Media from './Media.js';
 import Audit from './Audit.js';
 
-// Project associations
-Project.hasMany(Expense, { foreignKey: 'projectId' });
-Expense.belongsTo(Project, { foreignKey: 'projectId' });
+// Project Associations
+Project.belongsTo(User, { foreignKey: 'contractorId', as: 'contractor' });
+Project.belongsTo(User, { foreignKey: 'siteManagerId', as: 'siteManager' });
+Project.belongsTo(User, { foreignKey: 'accountantId', as: 'accountant' });
+Project.hasMany(Expense, { foreignKey: 'projectId', as: 'expenses' });
+Project.hasMany(Worker, { foreignKey: 'projectId', as: 'workers' });
+Project.hasMany(Material, { foreignKey: 'projectId', as: 'materials' });
+Project.hasMany(DailyReport, { foreignKey: 'projectId', as: 'dailyReports' });
+Project.hasMany(Milestone, { foreignKey: 'projectId', as: 'milestones' });
 
-Project.hasMany(Worker, { foreignKey: 'projectId' });
-Worker.belongsTo(Project, { foreignKey: 'projectId' });
+// Expense Associations
+Expense.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+Expense.belongsTo(User, { foreignKey: 'recordedBy', as: 'recorder' });
+Expense.belongsTo(User, { foreignKey: 'approvedBy', as: 'approver' });
 
-Project.hasMany(Material, { foreignKey: 'projectId' });
-Material.belongsTo(Project, { foreignKey: 'projectId' });
+// Worker Associations
+Worker.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+Worker.hasMany(Attendance, { foreignKey: 'workerId', as: 'attendances' });
+Worker.hasMany(WorkerPayment, { foreignKey: 'workerId', as: 'payments' });
 
-Project.hasMany(DailyReport, { foreignKey: 'projectId' });
-DailyReport.belongsTo(Project, { foreignKey: 'projectId' });
+// Attendance Associations
+Attendance.belongsTo(Worker, { foreignKey: 'workerId', as: 'worker' });
+Attendance.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
 
-// Worker associations
-Worker.hasMany(Attendance, { foreignKey: 'workerId' });
-Attendance.belongsTo(Worker, { foreignKey: 'workerId' });
+// WorkerPayment Associations
+WorkerPayment.belongsTo(Worker, { foreignKey: 'workerId', as: 'worker' });
 
-Worker.hasMany(WorkerPayment, { foreignKey: 'workerId' });
-WorkerPayment.belongsTo(Worker, { foreignKey: 'workerId' });
+// Material Associations
+Material.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
 
-// User associations
-User.hasMany(Project, { foreignKey: 'contractorId' });
-Project.belongsTo(User, { foreignKey: 'contractorId' });
-
-User.hasMany(Expense, { foreignKey: 'recordedBy' });
-Expense.belongsTo(User, { foreignKey: 'recordedBy' });
-
-User.hasMany(DailyReport, { foreignKey: 'generatedBy' });
+// DailyReport Associations
+DailyReport.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
 DailyReport.belongsTo(User, { foreignKey: 'generatedBy', as: 'generator' });
 
-User.hasMany(Request, { foreignKey: 'requestedBy' });
+// Milestone Associations
+Milestone.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+
+// Request Associations
 Request.belongsTo(User, { foreignKey: 'requestedBy', as: 'requestor' });
-
-User.hasMany(Request, { foreignKey: 'requestedTo' });
 Request.belongsTo(User, { foreignKey: 'requestedTo', as: 'approver' });
+Request.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
 
-User.hasMany(Media, { foreignKey: 'uploadedBy' });
+// Media Associations
 Media.belongsTo(User, { foreignKey: 'uploadedBy', as: 'uploader' });
+Media.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
 
-User.hasMany(Audit, { foreignKey: 'userId' });
-Audit.belongsTo(User, { foreignKey: 'userId' });
-
-// WorkerPayment - Project association (for analytics)
-WorkerPayment.belongsTo(Worker, { foreignKey: 'workerId' });
-WorkerPayment.belongsTo(Project, { 
-  foreignKey: 'projectId',
-  through: Worker 
-});
+// Audit Associations
+Audit.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 export {
   Project,
@@ -68,6 +69,7 @@ export {
   Material,
   User,
   DailyReport,
+  Milestone,
   Request,
   Media,
   Audit
