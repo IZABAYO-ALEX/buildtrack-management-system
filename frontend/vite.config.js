@@ -14,12 +14,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true
-  },
-  resolve: {
-    dedupe: ['react', 'react-dom']
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'framer-motion', 'lucide-react']
+    sourcemap: true,
+    minify: 'terser'
   }
 });

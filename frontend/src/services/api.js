@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+// Use relative path for Vercel (API is served from same domain)
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,6 +13,7 @@ const api = axios.create({
   withCredentials: true
 });
 
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -23,6 +25,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -35,21 +38,19 @@ api.interceptors.response.use(
   }
 );
 
-// ==================== Project Service ====================
+// Project Service
 export const projectService = {
-  getAll: (params) => api.get('/projects', { params }),
+  getAll: () => api.get('/projects'),
   getById: (id) => api.get(`/projects/${id}`),
   create: (data) => api.post('/projects', data),
   update: (id, data) => api.put(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`),
-  archive: (id) => api.patch(`/projects/${id}/archive`),
-  updateProgress: (id, data) => api.patch(`/projects/${id}/progress`, data)
+  archive: (id) => api.patch(`/projects/${id}/archive`)
 };
 
-// ==================== User Service ====================
+// User Service
 export const userService = {
   getAll: () => api.get('/users'),
-  getById: (id) => api.get(`/users/${id}`),
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
@@ -59,119 +60,51 @@ export const userService = {
   resetPassword: (id, data) => api.post(`/users/${id}/reset-password`, data)
 };
 
-// ==================== Expense Service ====================
+// Expense Service
 export const expenseService = {
-  getAll: (params) => api.get('/expenses', { params }),
+  getAll: () => api.get('/expenses'),
   create: (data) => api.post('/expenses', data),
   update: (id, data) => api.put(`/expenses/${id}`, data),
   delete: (id) => api.delete(`/expenses/${id}`),
-  approve: (id) => api.patch(`/expenses/${id}/approve`),
-  reject: (id, data) => api.patch(`/expenses/${id}/reject`, data)
+  approve: (id) => api.patch(`/expenses/${id}/approve`)
 };
 
-// ==================== Worker Service ====================
+// Worker Service
 export const workerService = {
-  getAll: (params) => api.get('/workers', { params }),
+  getAll: () => api.get('/workers'),
   create: (data) => api.post('/workers', data),
   update: (id, data) => api.put(`/workers/${id}`, data),
-  delete: (id) => api.delete(`/workers/${id}`),
-  getByProject: (projectId) => api.get(`/workers?projectId=${projectId}`)
+  delete: (id) => api.delete(`/workers/${id}`)
 };
 
-// ==================== Attendance Service ====================
-export const attendanceService = {
-  getAll: (params) => api.get('/attendance', { params }),
-  create: (data) => api.post('/attendance', data),
-  update: (id, data) => api.put(`/attendance/${id}`, data),
-  delete: (id) => api.delete(`/attendance/${id}`),
-  bulkCreate: (data) => api.post('/attendance/bulk', data)
-};
-
-// ==================== Material Service ====================
+// Material Service
 export const materialService = {
-  getAll: (params) => api.get('/materials', { params }),
+  getAll: () => api.get('/materials'),
   create: (data) => api.post('/materials', data),
   update: (id, data) => api.put(`/materials/${id}`, data),
   delete: (id) => api.delete(`/materials/${id}`)
 };
 
-// ==================== Daily Report Service ====================
+// Attendance Service
+export const attendanceService = {
+  getAll: () => api.get('/attendance'),
+  create: (data) => api.post('/attendance', data),
+  update: (id, data) => api.put(`/attendance/${id}`, data),
+  delete: (id) => api.delete(`/attendance/${id}`)
+};
+
+// Daily Report Service
 export const dailyReportService = {
-  getAll: (params) => api.get('/daily-reports', { params }),
-  getById: (id) => api.get(`/daily-reports/${id}`),
+  getAll: () => api.get('/daily-reports'),
   generate: (data) => api.post('/daily-reports/generate', data),
-  sync: (data) => api.patch('/daily-reports/sync', data),
   getDashboard: (params) => api.get('/daily-reports/dashboard', { params })
 };
 
-// ==================== Dashboard Service ====================
+// Dashboard Service
 export const dashboardService = {
   getContractor: () => api.get('/dashboard/contractor'),
   getSiteManager: () => api.get('/dashboard/site-manager'),
   getAccountant: () => api.get('/dashboard/accountant')
-};
-
-// ==================== Report Service ====================
-export const reportService = {
-  getExpenses: (params) => api.get('/reports/expenses', { params }),
-  getWorkers: (params) => api.get('/reports/workers', { params }),
-  getMaterials: (params) => api.get('/reports/materials', { params }),
-  getBudget: (params) => api.get('/reports/budget', { params }),
-  getProfitability: (params) => api.get('/reports/profitability', { params })
-};
-
-// ==================== Analytics Service ====================
-export const analyticsService = {
-  getBudgetVsActual: (params) => api.get('/analytics/budget-vs-actual', { params }),
-  getProjectProgress: (params) => api.get('/analytics/project-progress', { params }),
-  getWorkerProductivity: (params) => api.get('/analytics/worker-productivity', { params }),
-  getMaterialConsumption: (params) => api.get('/analytics/material-consumption', { params }),
-  getExpenseBreakdown: (params) => api.get('/analytics/expense-breakdown', { params }),
-  getProfitLoss: (params) => api.get('/analytics/profit-loss', { params }),
-  getCashFlow: (params) => api.get('/analytics/cash-flow', { params })
-};
-
-// ==================== Notification Service ====================
-export const notificationService = {
-  getAll: () => api.get('/notifications'),
-  markAsRead: (id) => api.patch(`/notifications/${id}/read`),
-  markAllAsRead: () => api.patch('/notifications/read-all')
-};
-
-// ==================== Request Service ====================
-export const requestService = {
-  getAll: (params) => api.get('/requests', { params }),
-  create: (data) => api.post('/requests', data),
-  approve: (id) => api.patch(`/requests/${id}/approve`),
-  reject: (id, data) => api.patch(`/requests/${id}/reject`, data)
-};
-
-// ==================== Upload Service ====================
-export const uploadService = {
-  uploadSingle: (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return api.post('/upload/single', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-  },
-  uploadMultiple: (files) => {
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
-    return api.post('/upload/multiple', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-  },
-  uploadMedia: (projectId, file, type, title) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('projectId', projectId);
-    formData.append('type', type);
-    formData.append('title', title);
-    return api.post('/media', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-  }
 };
 
 export default api;
