@@ -1,0 +1,230 @@
+.media-gallery {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.media-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.media-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.upload-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-btn input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.toggle-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #64748b;
+}
+
+.toggle-btn.active {
+  background: white;
+  color: #6366f1;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.media-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.media-grid.grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.media-grid.list {
+  grid-template-columns: 1fr;
+}
+
+.media-item {
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.media-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.media-preview {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.media-preview img,
+.media-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.document-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #94a3b8;
+  padding: 20px;
+}
+
+.document-icon .file-name {
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+  color: #475569;
+  word-break: break-all;
+}
+
+.media-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.media-item:hover .media-overlay {
+  opacity: 1;
+}
+
+.view-btn,
+.approve-btn {
+  background: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #475569;
+}
+
+.view-btn:hover {
+  background: #6366f1;
+  color: white;
+  transform: scale(1.1);
+}
+
+.approve-btn:hover {
+  background: #10b981;
+  color: white;
+  transform: scale(1.1);
+}
+
+.media-info {
+  padding: 12px;
+}
+
+.media-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.media-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.media-type {
+  text-transform: capitalize;
+  background: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.approval-status {
+  font-weight: 500;
+}
+
+.approval-status.approved {
+  color: #10b981;
+}
+
+.approval-status.pending {
+  color: #f59e0b;
+}
+
+.media-uploader {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: #94a3b8;
+}
+
+.empty-state svg {
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+  .media-grid.grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}

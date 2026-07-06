@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.js';
-import bcrypt from 'bcryptjs';
 
 const User = sequelize.define('User', {
   id: {
@@ -43,51 +42,45 @@ const User = sequelize.define('User', {
     defaultValue: true,
     field: 'is_active'
   },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_verified'
+  },
   lastLogin: {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'last_login'
   },
-  profileImage: {
-    type: DataTypes.STRING(255),
+  createdBy: {
+    type: DataTypes.UUID,
     allowNull: true,
-    field: 'profile_image'
+    field: 'created_by'
   },
-  settings: {
-    type: DataTypes.JSONB,
-    defaultValue: {}
+  verifiedBy: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'verified_by'
+  },
+  verifiedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'verified_at'
   }
 }, {
   tableName: 'users',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at',
-  hooks: {
-    beforeCreate: async (user) => {
-      if (user.passwordHash) {
-        user.passwordHash = await bcrypt.hash(user.passwordHash, 10);
-      }
-    },
-    beforeUpdate: async (user) => {
-      if (user.changed('passwordHash')) {
-        user.passwordHash = await bcrypt.hash(user.passwordHash, 10);
-      }
-    }
-  }
+  updatedAt: 'updated_at'
 });
 
+// Direct password comparison - NO HASHING
 User.prototype.comparePassword = async function(password) {
-  return await bcrypt.compare(password, this.passwordHash);
-};
-
-User.prototype.hasPermission = function(permission) {
-  const permissions = {
-    contractor: ['all'],
-    site_manager: ['view_projects', 'update_projects', 'record_expenses', 'manage_workers', 'manage_attendance', 'view_materials', 'record_materials'],
-    accountant: ['view_budgets', 'view_expenses', 'view_payments', 'view_profit', 'view_revenue']
-  };
-  const userPermissions = permissions[this.role] || [];
-  return userPermissions.includes('all') || userPermissions.includes(permission);
+  console.log('🔑 Comparing plain text password:');
+  console.log('   Input:', password);
+  console.log('   Stored:', this.passwordHash);
+  console.log('   Match:', password === this.passwordHash);
+  return password === this.passwordHash;
 };
 
 export default User;

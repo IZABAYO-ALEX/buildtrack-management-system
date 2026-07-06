@@ -52,7 +52,10 @@ const WorkerPayment = sequelize.define('WorkerPayment', {
     field: 'recorded_by'
   }
 }, {
-  tableName: 'worker_payments'
+  tableName: 'worker_payments',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
 });
 
 export default WorkerPayment;

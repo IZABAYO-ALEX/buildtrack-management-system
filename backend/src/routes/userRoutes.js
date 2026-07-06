@@ -2,9 +2,11 @@ import express from 'express';
 import {
   getUsers,
   createUser,
-  updateUser,
+  verifyUser,
   deleteUser,
-  deactivateUser
+  deactivateUser,
+  activateUser,
+  resetPassword
 } from '../controllers/userController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
@@ -15,8 +17,10 @@ router.use(authorize('contractor'));
 
 router.get('/', getUsers);
 router.post('/', createUser);
-router.put('/:id', updateUser);
+router.patch('/:id/verify', verifyUser);
 router.delete('/:id', deleteUser);
 router.patch('/:id/deactivate', deactivateUser);
+router.patch('/:id/activate', activateUser);
+router.post('/:id/reset-password', resetPassword);
 
 export default router;

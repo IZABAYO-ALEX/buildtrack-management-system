@@ -10,85 +10,71 @@ const generateToken = (user) => {
   );
 };
 
-export const register = async (req, res) => {
-  try {
-    const { email, password, fullName, role, phone, companyName } = req.body;
-    
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email already registered' });
-    }
-
-    const user = await User.create({
-      email,
-      passwordHash: password,
-      fullName,
-      role: role || 'site_manager',
-      phone,
-      companyName,
-      isActive: true
-    });
-
-    const token = generateToken(user);
-
-    res.status(201).json({
-      success: true,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName,
-          role: user.role
-        },
-        token
-      }
-    });
-  } catch (error) {
-    logger.error('Registration error:', error);
-    res.status(400).json({ success: false, message: error.message });
-  }
-};
-
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     console.log('🔑 Login attempt:', email);
 
-    // Find user by email
-    const user = await User.findOne({ where: { email } });
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email and password are required' 
+      });
+    }
+
+    const user = await User.findOne({ 
+      where: { email: email.toLowerCase().trim() } 
+    });
     
     if (!user) {
       console.log('❌ User not found:', email);
       return res.status(401).json({ 
         success: false, 
-        message: 'Invalid credentials - User not found' 
+        message: 'Invalid email or password' 
       });
     }
 
-    // Check if user is active
+    console.log('👤 User found:', user.email, 'Role:', user.role);
+    console.log('📝 Stored password:', user.passwordHash);
+
     if (!user.isActive) {
       console.log('❌ User inactive:', email);
       return res.status(401).json({ 
         success: false, 
-        message: 'Account is deactivated. Please contact admin.' 
+        message: 'Account is deactivated. Please contact administrator.' 
       });
     }
 
-    // Verify password
+    if (user.role !== 'contractor' && !user.isVerified) {
+      console.log('❌ User not verified:', email);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Account not verified. Please wait for administrator verification.' 
+      });
+    }
+
+    if (user.role !== 'contractor' && !user.createdBy) {
+      console.log('❌ User not created by contractor:', email);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Access denied. Contact your administrator.' 
+      });
+    }
+
     const isValidPassword = await user.comparePassword(password);
+    console.log('🔑 Password valid:', isValidPassword);
+
     if (!isValidPassword) {
       console.log('❌ Invalid password for:', email);
       return res.status(401).json({ 
         success: false, 
-        message: 'Invalid credentials - Wrong password' 
+        message: 'Invalid email or password' 
       });
     }
 
-    // Update last login
     await user.update({ lastLogin: new Date() });
 
-    // Generate token
     const token = generateToken(user);
 
     console.log('✅ Login successful:', email, 'Role:', user.role);
@@ -101,17 +87,17 @@ export const login = async (req, res) => {
           email: user.email,
           fullName: user.fullName,
           role: user.role,
-          companyName: user.companyName
+          companyName: user.companyName,
+          isVerified: user.isVerified
         },
         token
       }
     });
   } catch (error) {
-    logger.error('Login error:', error);
     console.error('❌ Login error:', error);
-    res.status(400).json({ 
+    res.status(500).json({ 
       success: false, 
-      message: error.message || 'Login failed' 
+      message: 'Internal server error' 
     });
   }
 };
@@ -123,7 +109,7 @@ export const getProfile = async (req, res) => {
     });
     res.json({ success: true, data: user });
   } catch (error) {
-    logger.error('Get profile error:', error);
+    console.error('Profile error:', error);
     res.status(400).json({ success: false, message: error.message });
   }
 };

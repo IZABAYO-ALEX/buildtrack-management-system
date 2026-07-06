@@ -49,9 +49,17 @@ const Attendance = sequelize.define('Attendance', {
     type: DataTypes.UUID,
     allowNull: false,
     field: 'recorded_by'
+  },
+  syncStatus: {
+    type: DataTypes.ENUM('pending', 'synced'),
+    defaultValue: 'pending',
+    field: 'sync_status'
   }
 }, {
-  tableName: 'attendance'
+  tableName: 'attendance',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
 });
 
 export default Attendance;

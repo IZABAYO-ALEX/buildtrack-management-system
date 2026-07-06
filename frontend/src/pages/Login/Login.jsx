@@ -26,40 +26,27 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Pre-fill for testing
-  const fillCredentials = (role) => {
-    const credentials = {
-      contractor: { email: 'contractor@buildtrack.com', password: 'password123' },
-      site_manager: { email: 'manager@buildtrack.com', password: 'password123' },
-      accountant: { email: 'accountant@buildtrack.com', password: 'password123' }
-    };
-    const cred = credentials[role];
-    if (cred) {
-      setEmail(cred.email);
-      setPassword(cred.password);
-    }
-  };
+  const roles = [
+    { id: 'contractor', name: 'Contractor', icon: <Briefcase size={24} />, description: 'Manage projects & users', color: '#6366F1' },
+    { id: 'site_manager', name: 'Site Manager', icon: <HardHat size={24} />, description: 'Track daily operations', color: '#F59E0B' },
+    { id: 'accountant', name: 'Accountant', icon: <Calculator size={24} />, description: 'Review expenses & reports', color: '#10B981' }
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    console.log('🔑 Attempting login with:', email);
-
     try {
       const result = await login(email, password);
       
       if (result.success && result.user) {
-        console.log('✅ Login successful! User role:', result.user.role);
-        
         const roleMap = {
           contractor: '/dashboard/contractor',
           site_manager: '/dashboard/site-manager',
           accountant: '/dashboard/accountant'
         };
         const dashboardPath = roleMap[result.user.role] || '/dashboard';
-        console.log('🔄 Redirecting to:', dashboardPath);
         navigate(dashboardPath, { replace: true });
       } else {
         setError(result.error || 'Login failed. Please check your credentials.');
@@ -89,7 +76,7 @@ const Login = () => {
             <p>Sign in to continue managing your construction projects</p>
             <div className="brand-features">
               <div><CheckCircle size={18} color="#10B981" /><span>Real-time project tracking</span></div>
-              <div><CheckCircle size={18} color="#10B981" /><span>Automated expense management</span></div>
+              <div><CheckCircle size={18} color="#10B981" /><span>Role-based access control</span></div>
               <div><CheckCircle size={18} color="#10B981" /><span>Comprehensive reporting</span></div>
             </div>
           </div>
@@ -105,20 +92,9 @@ const Login = () => {
             <h2>Sign In</h2>
             <p className="form-subtitle">Enter your credentials to access your dashboard</p>
 
-            {/* Quick Login Buttons */}
-            <div className="quick-login">
-              <button type="button" className="quick-login-btn contractor" onClick={() => fillCredentials('contractor')}>
-                <Briefcase size={16} />
-                Contractor
-              </button>
-              <button type="button" className="quick-login-btn site_manager" onClick={() => fillCredentials('site_manager')}>
-                <HardHat size={16} />
-                Site Manager
-              </button>
-              <button type="button" className="quick-login-btn accountant" onClick={() => fillCredentials('accountant')}>
-                <Calculator size={16} />
-                Accountant
-              </button>
+            <div className="login-hint">
+              <p><strong>🔐 Secure Login</strong></p>
+              <p>Only users created by the Contractor can access the system</p>
             </div>
 
             {error && <div className="error-message">{error}</div>}
@@ -176,6 +152,9 @@ const Login = () => {
                 {isLoading ? <span className="spinner"></span> : <>Sign In <ArrowRight size={18} /></>}
               </button>
             </form>
+
+            <div className="login-divider"><span>Or continue with</span></div>
+            <button type="button" className="social-btn"><img src="/google.svg" alt="Google" />Sign in with Google</button>
           </div>
         </motion.div>
       </div>

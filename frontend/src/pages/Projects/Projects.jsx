@@ -1,24 +1,22 @@
+// frontend/src/pages/Projects/Projects.jsx
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Plus, Search, Edit, Trash2, Eye, 
-  Archive, X, CheckCircle, Clock, AlertCircle,
-  Calendar, MapPin, DollarSign, Users, Package,
-  RefreshCw, Building2, FileText, Filter
+  Archive, CheckCircle, Clock, AlertCircle,
+  Calendar, MapPin, DollarSign, Users, 
+  RefreshCw, Building2, FileText, Filter,
+  Tag, Activity, BarChart3, X
 } from 'lucide-react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import FormInput from '../../components/forms/FormInput';
-import FormModal from '../../components/forms/FormModal';
-import { projectService } from '../../services/api';
-import { projectSchema } from '../../schemas';
-import '../../components/forms/Forms.css';
+import ProjectForm from '../../components/common/ProjectForm';
+import api, { projectService } from '../../services/api';
 import './Projects.css';
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -26,79 +24,30 @@ const Projects = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const methods = useForm({
-    resolver: zodResolver(projectSchema),
-    defaultValues: {
-      name: '',
-      clientName: '',
-      description: '',
-      location: '',
-      budget: '',
-      startDate: '',
-      endDate: '',
-      status: 'planning'
-    }
-  });
-
-  const statusOptions = [
-    { value: 'planning', label: 'Planning' },
-    { value: 'active', label: 'Active' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'suspended', label: 'Suspended' }
-  ];
 
   useEffect(() => {
-    fetchProjects();
+    fetchData();
   }, []);
 
-  const fetchProjects = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await projectService.getAll();
-      setProjects(response.data.data || []);
+      const [projectsRes, usersRes] = await Promise.all([
+        projectService.getAll(),
+        api.get('/users')
+      ]);
+      setProjects(projectsRes.data.data || []);
+      setUsers(usersRes.data.data || []);
     } catch (error) {
-      toast.error('Failed to fetch projects');
+      toast.error('Failed to fetch data');
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreate = async (data) => {
-    setIsSubmitting(true);
-    try {
-      const response = await projectService.create(data);
-      setProjects([response.data.data, ...projects]);
-      toast.success('Project created successfully!');
-      setShowCreateModal(false);
-      methods.reset();
-      fetchProjects();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create project');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUpdate = async (data) => {
-    setIsSubmitting(true);
-    try {
-      const response = await projectService.update(selectedProject.id, data);
-      setProjects(projects.map(p => p.id === selectedProject.id ? response.data.data : p));
-      toast.success('Project updated successfully!');
-      setShowEditModal(false);
-      methods.reset();
-      fetchProjects();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update project');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
+    if (!window.confirm('⚠️ Are you sure you want to delete this project?')) return;
     try {
       await projectService.delete(id);
       setProjects(projects.filter(p => p.id !== id));
@@ -112,45 +61,19 @@ const Projects = () => {
     try {
       await projectService.archive(id);
       toast.success('Project archived successfully!');
-      fetchProjects();
+      fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to archive project');
     }
   };
 
-  const openEditModal = (project) => {
-    setSelectedProject(project);
-    methods.reset({
-      name: project.name,
-      clientName: project.clientName || '',
-      description: project.description || '',
-      location: project.location || '',
-      budget: project.budget,
-      startDate: project.startDate || '',
-      endDate: project.endDate || '',
-      status: project.status
-    });
-    setShowEditModal(true);
-  };
-
-  const openViewModal = (project) => {
-    setSelectedProject(project);
-    setShowViewModal(true);
-  };
-
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          project.clientName?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   const getStatusColor = (status) => {
     const colors = {
       planning: 'warning',
       active: 'success',
+      on_hold: 'danger',
       completed: 'info',
-      suspended: 'danger'
+      cancelled: 'secondary'
     };
     return colors[status] || 'secondary';
   };
@@ -159,29 +82,45 @@ const Projects = () => {
     const icons = {
       planning: <Clock size={14} />,
       active: <CheckCircle size={14} />,
+      on_hold: <AlertCircle size={14} />,
       completed: <CheckCircle size={14} />,
-      suspended: <AlertCircle size={14} />
+      cancelled: <X size={14} />
     };
     return icons[status] || null;
   };
+
+  const getPriorityColor = (priority) => {
+    const colors = {
+      low: 'info',
+      medium: 'warning',
+      high: 'danger',
+      critical: 'danger critical'
+    };
+    return colors[priority] || 'secondary';
+  };
+
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          project.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          project.projectCode?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <DashboardLayout userRole="contractor">
       <div className="projects-container">
         <div className="page-header">
           <div>
-            <h1>Projects</h1>
+            <h1>📋 Projects</h1>
             <p>Manage all your construction projects</p>
           </div>
           <div className="page-actions">
-            <button className="btn-primary" onClick={() => {
-              methods.reset();
-              setShowCreateModal(true);
-            }}>
+            <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
               <Plus size={18} />
               New Project
             </button>
-            <button className="btn-outline" onClick={fetchProjects}>
+            <button className="btn-outline" onClick={fetchData}>
               <RefreshCw size={18} />
               Refresh
             </button>
@@ -193,7 +132,7 @@ const Projects = () => {
             <Search size={18} className="search-icon" />
             <input
               type="text"
-              placeholder="Search projects..."
+              placeholder="Search projects by name, client, or code..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -206,11 +145,11 @@ const Projects = () => {
               className="filter-select"
             >
               <option value="all">All Status</option>
-              {statusOptions.map(status => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
+              <option value="planning">📋 Planning</option>
+              <option value="active">✅ Active</option>
+              <option value="on_hold">⏸️ On Hold</option>
+              <option value="completed">🎯 Completed</option>
+              <option value="cancelled">❌ Cancelled</option>
             </select>
           </div>
         </div>
@@ -222,13 +161,10 @@ const Projects = () => {
           </div>
         ) : filteredProjects.length === 0 ? (
           <div className="empty-state">
-            <FileText size={64} />
+            <Building2 size={64} />
             <h3>No projects found</h3>
             <p>Create your first project to get started</p>
-            <button className="btn-primary" onClick={() => {
-              methods.reset();
-              setShowCreateModal(true);
-            }}>
+            <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
               <Plus size={18} />
               Create Project
             </button>
@@ -245,35 +181,67 @@ const Projects = () => {
                 whileHover={{ y: -4 }}
               >
                 <div className="project-card-header">
-                  <div className="project-status">
+                  <div className="project-badges">
                     <span className={`status-badge ${getStatusColor(project.status)}`}>
                       {getStatusIcon(project.status)}
-                      {project.status}
+                      {project.status?.replace('_', ' ')}
                     </span>
+                    {project.priority && (
+                      <span className={`priority-badge ${getPriorityColor(project.priority)}`}>
+                        {project.priority}
+                      </span>
+                    )}
                     {project.isArchived && (
-                      <span className="status-badge archived">Archived</span>
+                      <span className="status-badge archived">📦 Archived</span>
                     )}
                   </div>
-                  <div className="project-actions-dropdown">
-                    <button className="icon-btn" onClick={() => openViewModal(project)}>
+                  <div className="project-actions">
+                    <button 
+                      className="icon-btn" 
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setShowViewModal(true);
+                      }}
+                      title="View Details"
+                    >
                       <Eye size={18} />
                     </button>
-                    <button className="icon-btn" onClick={() => openEditModal(project)}>
+                    <button 
+                      className="icon-btn" 
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setShowEditModal(true);
+                      }}
+                      title="Edit Project"
+                    >
                       <Edit size={18} />
                     </button>
-                    <button className="icon-btn" onClick={() => handleArchive(project.id)}>
-                      <Archive size={18} />
-                    </button>
-                    <button className="icon-btn danger" onClick={() => handleDelete(project.id)}>
+                    {!project.isArchived && (
+                      <button 
+                        className="icon-btn" 
+                        onClick={() => handleArchive(project.id)}
+                        title="Archive Project"
+                      >
+                        <Archive size={18} />
+                      </button>
+                    )}
+                    <button 
+                      className="icon-btn danger" 
+                      onClick={() => handleDelete(project.id)}
+                      title="Delete Project"
+                    >
                       <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
 
                 <div className="project-card-body">
+                  {project.projectCode && (
+                    <div className="project-code">{project.projectCode}</div>
+                  )}
                   <h3 className="project-title">{project.name}</h3>
                   {project.clientName && (
-                    <p className="project-client"><Building2 size={14} /> {project.clientName}</p>
+                    <p className="project-client">👤 {project.clientName}</p>
                   )}
                   {project.location && (
                     <p className="project-location">
@@ -281,29 +249,45 @@ const Projects = () => {
                       {project.location}
                     </p>
                   )}
-                  <p className="project-description">{project.description}</p>
+                  <p className="project-description">
+                    {project.description || 'No description provided'}
+                  </p>
+                  {project.tags && project.tags.length > 0 && (
+                    <div className="project-tags">
+                      {project.tags.slice(0, 3).map(tag => (
+                        <span key={tag} className="tag">{tag}</span>
+                      ))}
+                      {project.tags.length > 3 && (
+                        <span className="tag-more">+{project.tags.length - 3}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="project-card-footer">
                   <div className="project-metrics">
-                    <div className="metric">
+                    <div className="metric" title="Budget">
                       <DollarSign size={14} />
                       <span>${project.budget?.toLocaleString() || 0}</span>
                     </div>
-                    <div className="metric">
+                    <div className="metric" title="Workers">
                       <Users size={14} />
-                      <span>{project.workerCount || 0} workers</span>
+                      <span>{project.workerCount || 0}</span>
                     </div>
-                    <div className="metric">
+                    <div className="metric" title="End Date">
                       <Calendar size={14} />
                       <span>{project.endDate || 'N/A'}</span>
+                    </div>
+                    <div className="metric" title="Progress">
+                      <Activity size={14} />
+                      <span>{project.progress || 0}%</span>
                     </div>
                   </div>
                   <div className="project-progress">
                     <div className="progress-bar">
                       <div 
                         className="progress-fill" 
-                        style={{ width: `${project.budgetUtilization || 0}%` }}
+                        style={{ width: `${Math.min(project.budgetUtilization || 0, 100)}%` }}
                       ></div>
                     </div>
                     <span className="progress-text">
@@ -316,237 +300,114 @@ const Projects = () => {
           </div>
         )}
 
-        {/* Create Modal */}
-        <FormModal
+        {/* Create Project Modal */}
+        <ProjectForm
           isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          title="Create New Project"
-          subtitle="Fill in the project details below"
-          onSubmit={methods.handleSubmit(handleCreate)}
-          isLoading={isSubmitting}
-          submitText="Create Project"
-        >
-          <FormProvider {...methods}>
-            <div className="form-grid">
-              <div className="full-width">
-                <FormInput
-                  name="name"
-                  label="Project Name"
-                  placeholder="Enter project name"
-                  required
-                  icon={Building2}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="clientName"
-                  label="Client Name"
-                  placeholder="Enter client name"
-                  icon={Users}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="location"
-                  label="Location"
-                  placeholder="Enter location"
-                  icon={MapPin}
-                />
-              </div>
-              <div className="full-width">
-                <FormInput
-                  name="description"
-                  label="Description"
-                  placeholder="Enter project description"
-                  type="textarea"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="budget"
-                  label="Budget"
-                  placeholder="Enter budget"
-                  type="number"
-                  required
-                  icon={DollarSign}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="status"
-                  label="Status"
-                  type="select"
-                  options={statusOptions}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="startDate"
-                  label="Start Date"
-                  type="date"
-                  icon={Calendar}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="endDate"
-                  label="End Date"
-                  type="date"
-                  icon={Calendar}
-                />
-              </div>
-            </div>
-          </FormProvider>
-        </FormModal>
+          onClose={() => {
+            setShowCreateModal(false);
+            resetForm();
+          }}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            resetForm();
+            fetchData();
+          }}
+          users={users}
+        />
 
-        {/* Edit Modal */}
-        <FormModal
+        {/* Edit Project Modal */}
+        <ProjectForm
           isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          title="Edit Project"
-          subtitle="Update project details"
-          onSubmit={methods.handleSubmit(handleUpdate)}
-          isLoading={isSubmitting}
-          submitText="Update Project"
-        >
-          <FormProvider {...methods}>
-            <div className="form-grid">
-              <div className="full-width">
-                <FormInput
-                  name="name"
-                  label="Project Name"
-                  placeholder="Enter project name"
-                  required
-                  icon={Building2}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="clientName"
-                  label="Client Name"
-                  placeholder="Enter client name"
-                  icon={Users}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="location"
-                  label="Location"
-                  placeholder="Enter location"
-                  icon={MapPin}
-                />
-              </div>
-              <div className="full-width">
-                <FormInput
-                  name="description"
-                  label="Description"
-                  placeholder="Enter project description"
-                  type="textarea"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="budget"
-                  label="Budget"
-                  placeholder="Enter budget"
-                  type="number"
-                  required
-                  icon={DollarSign}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="status"
-                  label="Status"
-                  type="select"
-                  options={statusOptions}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="startDate"
-                  label="Start Date"
-                  type="date"
-                  icon={Calendar}
-                />
-              </div>
-              <div>
-                <FormInput
-                  name="endDate"
-                  label="End Date"
-                  type="date"
-                  icon={Calendar}
-                />
-              </div>
-            </div>
-          </FormProvider>
-        </FormModal>
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedProject(null);
+            resetForm();
+          }}
+          onSuccess={() => {
+            setShowEditModal(false);
+            setSelectedProject(null);
+            resetForm();
+            fetchData();
+          }}
+          project={selectedProject}
+          users={users}
+        />
 
-        {/* View Modal */}
-        <FormModal
-          isOpen={showViewModal}
-          onClose={() => setShowViewModal(false)}
-          title="Project Details"
-          submitText="Close"
-          onCancel={() => setShowViewModal(false)}
-        >
-          {selectedProject && (
-            <div className="view-content">
-              <div className="view-section">
-                <h3>{selectedProject.name}</h3>
-                <div className="view-meta">
-                  <span className={`status-badge ${getStatusColor(selectedProject.status)}`}>
-                    {getStatusIcon(selectedProject.status)}
-                    {selectedProject.status}
-                  </span>
-                  {selectedProject.isArchived && (
-                    <span className="status-badge archived">Archived</span>
-                  )}
+        {/* View Project Modal */}
+        {showViewModal && selectedProject && (
+          <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
+            <motion.div 
+              className="modal view-modal"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h2>Project Details</h2>
+                <button className="modal-close" onClick={() => setShowViewModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="view-content">
+                <div className="view-section">
+                  <div className="view-row">
+                    <div className="view-label">Project Code</div>
+                    <div className="view-value">{selectedProject.projectCode || 'N/A'}</div>
+                  </div>
+                  <div className="view-row">
+                    <div className="view-label">Name</div>
+                    <div className="view-value">{selectedProject.name}</div>
+                  </div>
+                  <div className="view-row">
+                    <div className="view-label">Status</div>
+                    <div className="view-value">
+                      <span className={`status-badge ${getStatusColor(selectedProject.status)}`}>
+                        {selectedProject.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="view-row">
+                    <div className="view-label">Client</div>
+                    <div className="view-value">{selectedProject.clientName || 'N/A'}</div>
+                  </div>
+                  <div className="view-row">
+                    <div className="view-label">Location</div>
+                    <div className="view-value">{selectedProject.location || 'N/A'}</div>
+                  </div>
+                  <div className="view-row">
+                    <div className="view-label">Budget</div>
+                    <div className="view-value">${selectedProject.budget?.toLocaleString() || 0}</div>
+                  </div>
+                  <div className="view-row">
+                    <div className="view-label">Description</div>
+                    <div className="view-value">{selectedProject.description || 'No description'}</div>
+                  </div>
+                  <div className="view-row">
+                    <div className="view-label">Start Date</div>
+                    <div className="view-value">{selectedProject.startDate || 'N/A'}</div>
+                  </div>
+                  <div className="view-row">
+                    <div className="view-label">End Date</div>
+                    <div className="view-value">{selectedProject.endDate || 'N/A'}</div>
+                  </div>
+                </div>
+                <div className="view-actions">
+                  <button 
+                    className="btn-primary" 
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setShowEditModal(true);
+                    }}
+                  >
+                    <Edit size={18} />
+                    Edit Project
+                  </button>
                 </div>
               </div>
-              <div className="view-grid">
-                <div className="view-item">
-                  <label>Client</label>
-                  <p>{selectedProject.clientName || 'N/A'}</p>
-                </div>
-                <div className="view-item">
-                  <label>Location</label>
-                  <p>{selectedProject.location || 'N/A'}</p>
-                </div>
-                <div className="view-item">
-                  <label>Budget</label>
-                  <p>${selectedProject.budget?.toLocaleString() || 0}</p>
-                </div>
-                <div className="view-item">
-                  <label>Total Expenses</label>
-                  <p>${selectedProject.totalExpenses?.toLocaleString() || 0}</p>
-                </div>
-                <div className="view-item">
-                  <label>Remaining Budget</label>
-                  <p>${selectedProject.remainingBudget?.toLocaleString() || 0}</p>
-                </div>
-                <div className="view-item">
-                  <label>Budget Utilization</label>
-                  <p>{selectedProject.budgetUtilization?.toFixed(0) || 0}%</p>
-                </div>
-                <div className="view-item">
-                  <label>Start Date</label>
-                  <p>{selectedProject.startDate || 'N/A'}</p>
-                </div>
-                <div className="view-item">
-                  <label>End Date</label>
-                  <p>{selectedProject.endDate || 'N/A'}</p>
-                </div>
-                <div className="view-item full-width">
-                  <label>Description</label>
-                  <p>{selectedProject.description || 'No description'}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </FormModal>
+            </motion.div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

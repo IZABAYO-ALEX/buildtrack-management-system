@@ -7,7 +7,7 @@ export const getUsers = async (req, res) => {
   try {
     const users = await User.findAll({
       attributes: { exclude: ['passwordHash'] },
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
     res.json({ success: true, data: users });
   } catch (error) {
@@ -20,29 +20,30 @@ export const createUser = async (req, res) => {
   try {
     const { email, password, fullName, role, phone, companyName } = req.body;
     
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ success: false, message: 'Valid email is required' });
+    }
+    
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(password || 'password123', 10);
+    const plainPassword = password || 'password123';
     
     const user = await User.create({
-      email,
-      passwordHash: hashedPassword,
+      email: email.toLowerCase().trim(),
+      passwordHash: plainPassword,
       fullName,
       role: role || 'site_manager',
       phone: phone || '',
       companyName: companyName || '',
-      isActive: true
+      isActive: true,
+      isVerified: false,
+      createdBy: req.user.id
     });
 
-    await Audit.create({
-      userId: req.user.id,
-      action: 'CREATE_USER',
-      details: { email, fullName, role },
-      affectedRecord: user.id
-    });
+    console.log('✅ User created:', user.email, 'Role:', user.role);
 
     res.status(201).json({
       success: true,
@@ -53,53 +54,42 @@ export const createUser = async (req, res) => {
         role: user.role,
         phone: user.phone,
         companyName: user.companyName,
-        isActive: user.isActive
-      }
+        isActive: user.isActive,
+        isVerified: user.isVerified
+      },
+      message: `User ${fullName} created successfully! Password: ${plainPassword}`
     });
   } catch (error) {
-    logger.error('Create user error:', error);
+    console.error('Create user error:', error);
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
-export const updateUser = async (req, res) => {
+export const verifyUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fullName, phone, role, isActive, password } = req.body;
 
     const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const updates = {};
-    if (fullName !== undefined) updates.fullName = fullName;
-    if (phone !== undefined) updates.phone = phone;
-    if (role !== undefined) updates.role = role;
-    if (isActive !== undefined) updates.isActive = isActive;
-    if (password && password.length > 0) {
-      updates.passwordHash = await bcrypt.hash(password, 10);
+    if (user.role === 'contractor') {
+      return res.status(400).json({ success: false, message: 'Cannot verify contractor' });
     }
 
-    await user.update(updates);
+    user.isVerified = true;
+    user.isActive = true;
+    user.verifiedBy = req.user.id;
+    user.verifiedAt = new Date();
+    await user.save();
 
-    await Audit.create({
-      userId: req.user.id,
-      action: 'UPDATE_USER',
-      details: { userId: id, changes: updates },
-      affectedRecord: id
-    });
-
-    const userData = await User.findByPk(id, {
-      attributes: { exclude: ['passwordHash'] }
-    });
-
-    res.json({
-      success: true,
-      data: userData
+    res.json({ 
+      success: true, 
+      message: `User ${user.fullName} verified and activated successfully!` 
     });
   } catch (error) {
-    logger.error('Update user error:', error);
+    logger.error('Verify user error:', error);
     res.status(400).json({ success: false, message: error.message });
   }
 };
@@ -108,19 +98,19 @@ export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (id === req.user.id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'You cannot delete your own account' 
+      });
+    }
+
     const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     await user.destroy();
-
-    await Audit.create({
-      userId: req.user.id,
-      action: 'DELETE_USER',
-      details: { userId: id, email: user.email },
-      affectedRecord: id
-    });
 
     res.json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
@@ -133,6 +123,13 @@ export const deactivateUser = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (id === req.user.id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'You cannot deactivate your own account' 
+      });
+    }
+
     const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -141,16 +138,58 @@ export const deactivateUser = async (req, res) => {
     user.isActive = false;
     await user.save();
 
-    await Audit.create({
-      userId: req.user.id,
-      action: 'DEACTIVATE_USER',
-      details: { userId: id, email: user.email },
-      affectedRecord: id
-    });
-
     res.json({ success: true, message: 'User deactivated successfully' });
   } catch (error) {
     logger.error('Deactivate user error:', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const activateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.isActive = true;
+    await user.save();
+
+    res.json({ success: true, message: 'User activated successfully' });
+  } catch (error) {
+    logger.error('Activate user error:', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters' 
+      });
+    }
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.passwordHash = newPassword;
+    await user.save();
+
+    res.json({ 
+      success: true, 
+      message: `Password reset successfully for ${user.fullName}` 
+    });
+  } catch (error) {
+    logger.error('Reset password error:', error);
     res.status(400).json({ success: false, message: error.message });
   }
 };

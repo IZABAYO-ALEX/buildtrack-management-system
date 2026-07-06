@@ -55,6 +55,9 @@ import reportRoutes from './routes/reportRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import dailyReportRoutes from './routes/dailyReportRoutes.js';
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
@@ -67,6 +70,9 @@ app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/audits', auditRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/daily-reports', dailyReportRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

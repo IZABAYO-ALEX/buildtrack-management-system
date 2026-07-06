@@ -1,4 +1,9 @@
-import { Project, Expense, Worker, WorkerPayment, Material } from '../models/index.js';
+import { sequelize } from '../config/database.js';
+import Project from '../models/Project.js';
+import Expense from '../models/Expense.js';
+import Worker from '../models/Worker.js';
+import WorkerPayment from '../models/WorkerPayment.js';
+import Material from '../models/Material.js';
 import logger from '../utils/logger.js';
 
 export const getContractorDashboard = async (req, res) => {
@@ -19,8 +24,10 @@ export const getContractorDashboard = async (req, res) => {
       where: { projectId: projectIds }
     });
 
+    // Only get payments for workers
+    const workerIds = workers.map(w => w.id);
     const payments = await WorkerPayment.findAll({
-      where: { workerId: workers.map(w => w.id) }
+      where: { workerId: workerIds }
     });
 
     const materials = await Material.findAll({

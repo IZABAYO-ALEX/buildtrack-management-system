@@ -1,59 +1,154 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Users, FolderOpen, TrendingUp, ArrowUpRight, ArrowDownRight, Plus, Eye, Calendar, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Building2, DollarSign, Users, Package, 
+  TrendingUp, TrendingDown, ArrowUpRight, 
+  ArrowDownRight, Plus, Eye, Calendar, 
+  CheckCircle, Clock, BarChart3, Download,
+  FileText, UserPlus, RefreshCw,
+  FolderOpen, CreditCard, PieChart, Activity,
+  AlertCircle, Send, FileCheck
+} from 'lucide-react';
+import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import api from '../../services/api';
 import './Dashboard.css';
 
 const ContractorDashboard = () => {
-  const stats = [
-    { title: 'Total Expenses', value: '$45,280', change: '+12.5%', trend: 'up', icon: DollarSign, color: 'primary', subtitle: 'This month' },
-    { title: 'Budget Used', value: '68%', change: '+8.2%', trend: 'up', icon: TrendingUp, color: 'warning', subtitle: 'of total budget' },
-    { title: 'Active Projects', value: '12', change: '+4.3%', trend: 'up', icon: FolderOpen, color: 'success', subtitle: 'ongoing projects' },
-    { title: 'Active Workers', value: '48', change: '-2.1%', trend: 'down', icon: Users, color: 'info', subtitle: 'on site today' }
-  ];
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [dailyReports, setDailyReports] = useState([]);
 
-  const projects = [
-    { name: 'Kampala Heights', spent: 325000, budget: 500000, progress: 65, status: 'active', deadline: 'Dec 2024' },
-    { name: 'Entebbe Mall', spent: 450000, budget: 750000, progress: 60, status: 'active', deadline: 'Feb 2025' },
-    { name: 'Jinja Complex', spent: 300000, budget: 1000000, progress: 30, status: 'on_hold', deadline: 'May 2025' }
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      
+      const [projectsRes, reportsRes] = await Promise.all([
+        api.get('/projects'),
+        api.get('/daily-reports')
+      ]);
+
+      setProjects(projectsRes.data.data || []);
+      setDailyReports(reportsRes.data.data || []);
+
+      const dashboardRes = await api.get('/dashboard/contractor');
+      setDashboardData(dashboardRes.data.data);
+
+    } catch (error) {
+      toast.error('Failed to fetch dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout userRole="contractor">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const stats = [
+    {
+      title: 'Active Projects',
+      value: dashboardData?.summary?.activeProjects || 0,
+      change: '+12.5%',
+      trend: 'up',
+      icon: FolderOpen,
+      color: 'primary',
+      subtitle: 'ongoing projects'
+    },
+    {
+      title: 'Total Budget',
+      value: `$${dashboardData?.summary?.totalBudget?.toLocaleString() || 0}`,
+      change: '+8.2%',
+      trend: 'up',
+      icon: DollarSign,
+      color: 'success',
+      subtitle: 'allocated'
+    },
+    {
+      title: 'Total Expenses',
+      value: `$${dashboardData?.summary?.totalExpenses?.toLocaleString() || 0}`,
+      change: '-5.3%',
+      trend: 'down',
+      icon: CreditCard,
+      color: 'warning',
+      subtitle: 'spent'
+    },
+    {
+      title: 'Total Workers',
+      value: dashboardData?.summary?.totalWorkers || 0,
+      change: '+4.3%',
+      trend: 'up',
+      icon: Users,
+      color: 'info',
+      subtitle: 'active'
+    },
+    {
+      title: 'Today\'s Reports',
+      value: dailyReports.filter(r => r.date === new Date().toISOString().split('T')[0]).length || 0,
+      change: '+2.1%',
+      trend: 'up',
+      icon: FileText,
+      color: 'primary',
+      subtitle: 'from site managers'
+    },
+    {
+      title: 'Budget Utilization',
+      value: `${dashboardData?.summary?.budgetUtilization?.toFixed(1) || 0}%`,
+      change: '+6.8%',
+      trend: 'up',
+      icon: PieChart,
+      color: 'warning',
+      subtitle: 'used'
+    }
   ];
 
   return (
     <DashboardLayout userRole="contractor">
       <div className="dashboard-container">
-        {/* Hero Section with Construction Site Image */}
-        <motion.div 
-          className="hero-banner"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="hero-overlay">
-            <div className="hero-content">
-              <h1>Welcome Back, John!</h1>
-              <p>Track your construction projects, monitor expenses, and manage your workforce efficiently.</p>
-              <div className="hero-buttons">
-                <button className="btn-primary">View Projects</button>
-                <button className="btn-outline">Add Expense</button>
-              </div>
-            </div>
+        <div className="dashboard-header">
+          <div>
+            <h1>Contractor Dashboard</h1>
+            <p>Real-time overview of all projects and site activities</p>
           </div>
-          <img 
-            src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1200&h=400&fit=crop&crop=center"
-            alt="Construction Site"
-            className="hero-image"
-          />
-        </motion.div>
+          <div className="header-actions">
+            <button className="btn-outline" onClick={fetchAllData}>
+              <RefreshCw size={18} />
+              Sync All
+            </button>
+            <button className="btn-primary" onClick={() => navigate('/projects')}>
+              <Plus size={18} />
+              New Project
+            </button>
+            <button className="btn-primary" onClick={() => toast.success('Report downloaded!')}>
+              <Download size={18} />
+              Export Report
+            </button>
+          </div>
+        </div>
 
-        {/* Stats Grid */}
         <div className="stats-grid">
           {stats.map((stat, index) => (
             <motion.div 
               key={index} 
-              className="stat-card"
+              className="stat-card clickable"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.05 }}
+              onClick={() => stat.clickable && stat.path && navigate(stat.path)}
             >
               <div className="stat-header">
                 <div className={`stat-icon ${stat.color}`}>
@@ -68,93 +163,158 @@ const ContractorDashboard = () => {
               <div className="stat-title">{stat.title}</div>
               <div className="stat-subtitle">{stat.subtitle}</div>
               <div className="stat-progress">
-                <div className="stat-progress-bar" style={{ width: `${Math.random() * 80 + 20}%` }}></div>
+                <div className="stat-progress-bar" style={{ width: `${Math.min(Math.random() * 80 + 20, 100)}%` }}></div>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Projects & Activities Grid */}
         <div className="dashboard-grid">
           <div className="dashboard-main">
             <div className="card">
               <div className="card-header">
                 <h3>Project Overview</h3>
-                <button className="btn-link">View All</button>
+                <button className="btn-link" onClick={() => navigate('/projects')}>View All</button>
               </div>
-              {projects.map((project, index) => (
-                <motion.div 
-                  key={index} 
-                  className="project-item"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <div className="project-info">
-                    <div className="project-name">{project.name}</div>
-                    <div className="project-meta">
-                      <span className={`status-badge ${project.status}`}>
-                        <CheckCircle size={12} />
-                        {project.status}
-                      </span>
-                      <span className="project-deadline">
-                        <Calendar size={14} />
-                        {project.deadline}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="project-stats">
-                    <div className="project-budget">
-                      <span>${project.spent.toLocaleString()}</span>
-                      <span className="budget-total"> / ${project.budget.toLocaleString()}</span>
-                    </div>
-                    <div className="progress-wrapper">
-                      <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: `${project.progress}%` }}></div>
+              {dashboardData?.projectBreakdown?.length === 0 ? (
+                <div className="empty-state-small">
+                  <p>No projects yet. Create your first project!</p>
+                  <button className="btn-primary" onClick={() => navigate('/projects')}>
+                    <Plus size={16} />
+                    Create Project
+                  </button>
+                </div>
+              ) : (
+                dashboardData?.projectBreakdown?.slice(0, 5).map((project, index) => (
+                  <motion.div 
+                    key={index} 
+                    className="project-item"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => navigate(`/projects`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="project-info">
+                      <div className="project-name">{project.name}</div>
+                      <div className="project-meta">
+                        <span className={`status-badge ${project.status}`}>
+                          <CheckCircle size={12} />
+                          {project.status}
+                        </span>
+                        <span className="project-workers">
+                          <Users size={14} />
+                          {project.workers || 0} workers
+                        </span>
                       </div>
-                      <span className="progress-text">{project.progress}%</span>
                     </div>
-                  </div>
-                  <button className="project-action"><Eye size={18} /></button>
-                </motion.div>
-              ))}
+                    <div className="project-stats">
+                      <div className="project-budget">
+                        <span>${(project.expenses || 0).toLocaleString()}</span>
+                        <span className="budget-total"> / ${(project.budget || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="progress-wrapper">
+                        <div className="progress-bar">
+                          <div className="progress-fill" style={{ width: `${Math.min(project.utilization || 0, 100)}%` }}></div>
+                        </div>
+                        <span className="progress-text">{(project.utilization || 0).toFixed(0)}%</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+
+            <div className="card">
+              <div className="card-header">
+                <h3>Daily Reports from Sites</h3>
+                <button className="btn-link" onClick={() => navigate('/reports')}>View All</button>
+              </div>
+              {dailyReports.length === 0 ? (
+                <div className="empty-state-small">
+                  <p>No daily reports yet</p>
+                </div>
+              ) : (
+                dailyReports.slice(0, 4).map((report, index) => (
+                  <motion.div 
+                    key={report.id} 
+                    className="report-item"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <div className="report-info">
+                      <div className="report-date">
+                        <Calendar size={14} />
+                        {report.date}
+                      </div>
+                      <div className="report-summary">
+                        <span>👷 {report.workersPresent} workers</span>
+                        <span>📦 {Object.keys(report.materialsUsed || {}).length} materials</span>
+                        <span>💰 ${report.totalExpenses?.toFixed(0) || 0}</span>
+                      </div>
+                    </div>
+                    <div className="report-status">
+                      <span className={`status-badge ${report.sentToContractor ? 'success' : 'warning'}`}>
+                        {report.sentToContractor ? '✅ Synced' : '⏳ Pending'}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
           </div>
 
           <div className="dashboard-sidebar">
             <div className="card">
               <div className="card-header">
-                <h3>Recent Activity</h3>
-                <button className="btn-link">View All</button>
+                <h3>Quick Actions</h3>
               </div>
-              <div className="activity-list">
-                {[
-                  { title: 'New expense recorded', desc: 'Cement purchase - $850', time: '2 hours ago' },
-                  { title: 'Worker attendance', desc: '5 workers checked in', time: '4 hours ago' },
-                  { title: 'Project milestone', desc: 'Foundation completed', time: '1 day ago' }
-                ].map((item, i) => (
-                  <div key={i} className="activity-item">
-                    <div className="activity-icon" style={{ background: '#6366f120', color: '#6366f1' }}>
-                      <DollarSign size={16} />
-                    </div>
-                    <div className="activity-content">
-                      <div className="activity-title">{item.title}</div>
-                      <div className="activity-description">{item.desc}</div>
-                      <div className="activity-time">{item.time}</div>
-                    </div>
-                  </div>
-                ))}
+              <div className="quick-actions">
+                <button className="quick-action" onClick={() => navigate('/projects')}>
+                  <Plus size={18} />
+                  <span>New Project</span>
+                </button>
+                <button className="quick-action" onClick={() => navigate('/users')}>
+                  <UserPlus size={18} />
+                  <span>Manage Users</span>
+                </button>
+                <button className="quick-action" onClick={() => navigate('/reports')}>
+                  <BarChart3 size={18} />
+                  <span>View Reports</span>
+                </button>
+                <button className="quick-action" onClick={fetchAllData}>
+                  <RefreshCw size={18} />
+                  <span>Sync Data</span>
+                </button>
               </div>
             </div>
 
             <div className="card">
               <div className="card-header">
-                <h3>Quick Actions</h3>
+                <h3>Site Manager Status</h3>
               </div>
-              <div className="quick-actions">
-                <button className="quick-action"><Plus size={18} /><span>New Project</span></button>
-                <button className="quick-action"><DollarSign size={18} /><span>Add Expense</span></button>
-                <button className="quick-action"><Users size={18} /><span>Register Worker</span></button>
+              <div className="site-status">
+                <div className="status-item">
+                  <span className="status-label">Active Sites</span>
+                  <span className="status-value">{projects.filter(p => p.status === 'active').length}</span>
+                </div>
+                <div className="status-item">
+                  <span className="status-label">Reports Today</span>
+                  <span className="status-value">
+                    {dailyReports.filter(r => r.date === new Date().toISOString().split('T')[0]).length}
+                  </span>
+                </div>
+                <div className="status-item">
+                  <span className="status-label">Pending Sync</span>
+                  <span className="status-value">
+                    {dailyReports.filter(r => !r.sentToContractor).length}
+                  </span>
+                </div>
+                <div className="status-item highlight">
+                  <span className="status-label">Overall Status</span>
+                  <span className="status-value status-synced">🟢 All Systems Go</span>
+                </div>
               </div>
             </div>
           </div>

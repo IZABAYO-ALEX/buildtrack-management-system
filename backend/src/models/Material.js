@@ -59,16 +59,38 @@ const Material = sequelize.define('Material', {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0,
     field: 'consumed_quantity'
+  },
+  remainingQuantity: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+    field: 'remaining_quantity'
+  },
+  dailyConsumption: {
+    type: DataTypes.JSONB,
+    defaultValue: {},
+    field: 'daily_consumption'
+  },
+  syncStatus: {
+    type: DataTypes.ENUM('pending', 'synced'),
+    defaultValue: 'pending',
+    field: 'sync_status'
   }
 }, {
   tableName: 'materials',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
   hooks: {
     beforeCreate: (material) => {
       material.totalCost = material.quantity * material.unitCost;
+      material.remainingQuantity = material.quantity;
     },
     beforeUpdate: (material) => {
       if (material.changed('quantity') || material.changed('unitCost')) {
         material.totalCost = material.quantity * material.unitCost;
+      }
+      if (material.changed('quantity') || material.changed('consumedQuantity')) {
+        material.remainingQuantity = material.quantity - material.consumedQuantity;
       }
     }
   }

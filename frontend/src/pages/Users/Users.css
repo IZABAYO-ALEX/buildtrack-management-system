@@ -6,7 +6,7 @@
 
 .users-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 24px;
 }
 
@@ -26,7 +26,7 @@
 .user-card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 12px;
 }
 
@@ -41,6 +41,36 @@
   justify-content: center;
   font-size: 20px;
   font-weight: 600;
+}
+
+.user-status-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.contractor-badge {
+  background: #eef2ff;
+  color: #6366f1;
+}
+
+.verified-badge {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.unverified-badge {
+  background: #fffbeb;
+  color: #f59e0b;
 }
 
 .user-name {
@@ -106,6 +136,18 @@
   gap: 6px;
   font-size: 13px;
   color: #475569;
+  margin: 0 0 4px;
+}
+
+.user-created {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.user-verified {
+  font-size: 12px;
+  color: #10b981;
   margin: 0;
 }
 
@@ -118,9 +160,54 @@
   align-items: center;
 }
 
-.user-created {
+.user-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-verify {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
   font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-verify:hover {
+  background: #059669;
+}
+
+.user-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
   color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.icon-btn.danger:hover {
+  background: #fef2f2;
+  color: #ef4444;
 }
 
 .modal-subtitle {
@@ -129,9 +216,19 @@
   margin: 4px 0 0;
 }
 
+.modal-sm {
+  max-width: 500px !important;
+}
+
 .form-group small {
   display: block;
   font-size: 11px;
   color: #94a3b8;
   margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .users-grid {
+    grid-template-columns: 1fr;
+  }
 }

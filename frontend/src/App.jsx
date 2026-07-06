@@ -12,11 +12,12 @@ import Workers from './pages/Workers/Workers';
 import Materials from './pages/Materials/Materials';
 import Reports from './pages/Reports/Reports';
 import Users from './pages/Users/Users';
+import Analytics from './pages/Analytics/Analytics';
+import Requests from './pages/Requests/Requests';
+import Blog from './pages/Blog/Blog';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
-  
-  console.log('🔒 ProtectedRoute:', { isAuthenticated, user, isLoading });
   
   if (isLoading) {
     return (
@@ -28,12 +29,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
   
   if (!isAuthenticated || !user) {
-    console.log('🔒 Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    console.log('🔒 Role not allowed:', user.role, 'Allowed:', allowedRoles);
     const roleMap = {
       contractor: '/dashboard/contractor',
       site_manager: '/dashboard/site-manager',
@@ -42,14 +41,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to={roleMap[user.role] || '/dashboard'} replace />;
   }
   
-  console.log('🔒 Access granted');
   return children;
 };
 
 const RoleRedirect = () => {
   const { user, isLoading } = useAuth();
-  
-  console.log('🔄 RoleRedirect:', { user, isLoading });
   
   if (isLoading) {
     return (
@@ -61,7 +57,6 @@ const RoleRedirect = () => {
   }
   
   if (!user) {
-    console.log('🔄 No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
@@ -71,9 +66,7 @@ const RoleRedirect = () => {
     accountant: '/dashboard/accountant'
   };
   
-  const path = roleMap[user.role] || '/dashboard';
-  console.log('🔄 Redirecting to:', path);
-  return <Navigate to={path} replace />;
+  return <Navigate to={roleMap[user.role] || '/dashboard'} replace />;
 };
 
 function App() {
@@ -160,6 +153,33 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={['contractor']}>
             <Users />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/analytics" 
+        element={
+          <ProtectedRoute allowedRoles={['contractor', 'accountant']}>
+            <Analytics />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/requests" 
+        element={
+          <ProtectedRoute allowedRoles={['contractor', 'site_manager', 'accountant']}>
+            <Requests />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/blog" 
+        element={
+          <ProtectedRoute>
+            <Blog />
           </ProtectedRoute>
         } 
       />
