@@ -1,76 +1,296 @@
+import { sequelize } from '../config/database.js';
+import logger from '../utils/logger.js';
+
+// ==========================
+// Import Models
+// ==========================
+import User from './User.js';
 import Project from './Project.js';
-import Expense from './Expense.js';
 import Worker from './Worker.js';
 import Attendance from './Attendance.js';
-import WorkerPayment from './WorkerPayment.js';
+import Expense from './Expense.js';
 import Material from './Material.js';
-import User from './User.js';
-import DailyReport from './DailyReport.js';
 import Milestone from './Milestone.js';
 import Request from './Request.js';
 import Media from './Media.js';
+import DailyReport from './DailyReport.js';
+import WorkerPayment from './WorkerPayment.js';
 import Audit from './Audit.js';
 
-// Project Associations
-Project.belongsTo(User, { foreignKey: 'contractorId', as: 'contractor' });
-Project.belongsTo(User, { foreignKey: 'siteManagerId', as: 'siteManager' });
-Project.belongsTo(User, { foreignKey: 'accountantId', as: 'accountant' });
-Project.hasMany(Expense, { foreignKey: 'projectId', as: 'expenses' });
-Project.hasMany(Worker, { foreignKey: 'projectId', as: 'workers' });
-Project.hasMany(Material, { foreignKey: 'projectId', as: 'materials' });
-Project.hasMany(DailyReport, { foreignKey: 'projectId', as: 'dailyReports' });
-Project.hasMany(Milestone, { foreignKey: 'projectId', as: 'milestones' });
 
-// Expense Associations
-Expense.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
-Expense.belongsTo(User, { foreignKey: 'recordedBy', as: 'recorder' });
-Expense.belongsTo(User, { foreignKey: 'approvedBy', as: 'approver' });
+// ======================================================
+// USER ↔ PROJECT RELATIONSHIPS
+// ======================================================
 
-// Worker Associations
-Worker.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
-Worker.hasMany(Attendance, { foreignKey: 'workerId', as: 'attendances' });
-Worker.hasMany(WorkerPayment, { foreignKey: 'workerId', as: 'payments' });
+// Contractor owns projects
+User.hasMany(Project, {
+  foreignKey: 'contractor_id',
+  as: 'projects'
+});
 
-// Attendance Associations
-Attendance.belongsTo(Worker, { foreignKey: 'workerId', as: 'worker' });
-Attendance.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+Project.belongsTo(User, {
+  foreignKey: 'contractor_id',
+  as: 'contractor'
+});
 
-// WorkerPayment Associations
-WorkerPayment.belongsTo(Worker, { foreignKey: 'workerId', as: 'worker' });
 
-// Material Associations
-Material.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+// Site Manager manages projects
+User.hasMany(Project, {
+  foreignKey: 'site_manager_id',
+  as: 'managedProjects'
+});
 
-// DailyReport Associations
-DailyReport.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
-DailyReport.belongsTo(User, { foreignKey: 'generatedBy', as: 'generator' });
+Project.belongsTo(User, {
+  foreignKey: 'site_manager_id',
+  as: 'siteManager'
+});
 
-// Milestone Associations
-Milestone.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
 
-// Request Associations
-Request.belongsTo(User, { foreignKey: 'requestedBy', as: 'requestor' });
-Request.belongsTo(User, { foreignKey: 'requestedTo', as: 'approver' });
-Request.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+// Accountant assigned to projects
+User.hasMany(Project, {
+  foreignKey: 'accountant_id',
+  as: 'accountedProjects'
+});
 
-// Media Associations
-Media.belongsTo(User, { foreignKey: 'uploadedBy', as: 'uploader' });
-Media.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+Project.belongsTo(User, {
+  foreignKey: 'accountant_id',
+  as: 'accountant'
+});
 
-// Audit Associations
-Audit.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+
+
+// PROJECT ↔ WORKER
+// ======================================================
+
+Project.hasMany(Worker, {
+  foreignKey: 'projectId',
+  as: 'workers'
+});
+
+Worker.belongsTo(Project, {
+  foreignKey: 'projectId',
+  as: 'project'
+});
+
+
+
+// ======================================================
+// PROJECT ↔ EXPENSE
+// ======================================================
+
+Project.hasMany(Expense, {
+  foreignKey: 'projectId',
+  as: 'expenses'
+});
+
+Expense.belongsTo(Project, {
+  foreignKey: 'projectId',
+  as: 'project'
+});
+
+
+
+// Expense recorded by user
+User.hasMany(Expense, {
+  foreignKey: 'recordedBy',
+  as: 'recordedExpenses'
+});
+
+Expense.belongsTo(User, {
+  foreignKey: 'recordedBy',
+  as: 'recorder'
+});
+
+
+
+// Expense approved by user
+User.hasMany(Expense, {
+  foreignKey: 'approvedBy',
+  as: 'approvedExpenses'
+});
+
+Expense.belongsTo(User, {
+  foreignKey: 'approvedBy',
+  as: 'approver'
+});
+
+
+
+// ======================================================
+// PROJECT ↔ MATERIAL
+// ======================================================
+
+Project.hasMany(Material, {
+  foreignKey: 'project_id',
+  as: 'materials'
+});
+
+Material.belongsTo(Project, {
+  foreignKey: 'project_id',
+  as: 'project'
+});
+
+
+
+// ======================================================
+// PROJECT ↔ MILESTONE
+// ======================================================
+
+Project.hasMany(Milestone, {
+  foreignKey: 'project_id',
+  as: 'milestones'
+});
+
+Milestone.belongsTo(Project, {
+  foreignKey: 'project_id',
+  as: 'project'
+});
+
+
+
+// ======================================================
+// PROJECT ↔ REQUEST
+// ======================================================
+
+Project.hasMany(Request, {
+  foreignKey: 'project_id',
+  as: 'requests'
+});
+
+Request.belongsTo(Project, {
+  foreignKey: 'project_id',
+  as: 'project'
+});
+
+
+
+// ======================================================
+// USER ↔ REQUEST
+// ======================================================
+
+User.hasMany(Request, {
+  foreignKey: 'requestedBy',
+  as: 'submittedRequests'
+});
+
+Request.belongsTo(User, {
+  foreignKey: 'requesterId',
+  as: 'requester'
+});
+
+Request.belongsTo(User, {
+  foreignKey: 'approvedBy',
+  as: 'approver'
+});
+
+
+
+// ======================================================
+// PROJECT ↔ DAILY REPORT
+// ======================================================
+
+Project.hasMany(DailyReport, {
+  foreignKey: 'project_id',
+  as: 'dailyReports'
+});
+
+DailyReport.belongsTo(Project, {
+  foreignKey: 'project_id',
+  as: 'project'
+});
+
+
+User.hasMany(DailyReport, {
+  foreignKey: 'generatedBy',
+  as: 'reports'
+});
+
+DailyReport.belongsTo(User, {
+  foreignKey: 'generatedBy',
+  as: 'generatedByUser'
+});
+
+
+// ======================================================
+// PROJECT ↔ MEDIA
+// ======================================================
+
+Project.hasMany(Media, {
+  foreignKey: 'project_id',
+  as: 'media'
+});
+
+Media.belongsTo(Project, {
+  foreignKey: 'project_id',
+  as: 'project'
+});
+
+
+
+// ======================================================
+// WORKER RELATIONSHIPS
+// ======================================================
+
+Worker.hasMany(Attendance, {
+  foreignKey: 'worker_id',
+  as: 'attendances'
+});
+
+Attendance.belongsTo(Worker, {
+  foreignKey: 'worker_id',
+  as: 'worker'
+});
+
+
+Worker.hasMany(WorkerPayment, {
+  foreignKey: 'worker_id',
+  as: 'payments'
+});
+
+WorkerPayment.belongsTo(Worker, {
+  foreignKey: 'worker_id',
+  as: 'worker'
+});
+
+
+
+// ======================================================
+// USER ↔ AUDIT
+// ======================================================
+
+User.hasMany(Audit, {
+  foreignKey: 'user_id',
+  as: 'auditLogs'
+});
+
+Audit.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user'
+});
+
+
+
+// ======================================================
+// EXPORTS
+// ======================================================
+console.log("WORKER COLUMNS:");
+console.log(Object.keys(Worker.rawAttributes));
 export {
+  sequelize,
+  User,
   Project,
-  Expense,
   Worker,
   Attendance,
-  WorkerPayment,
+  Expense,
   Material,
-  User,
-  DailyReport,
   Milestone,
   Request,
   Media,
+  DailyReport,
+  WorkerPayment,
   Audit
 };
+
+
+logger.info('✅ Models loaded successfully');

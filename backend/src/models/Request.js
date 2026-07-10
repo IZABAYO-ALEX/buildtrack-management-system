@@ -66,7 +66,7 @@ const Request = sequelize.define('Request', {
     field: 'rejection_reason'
   },
   attachments: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     defaultValue: [],
     field: 'attachments'
   },

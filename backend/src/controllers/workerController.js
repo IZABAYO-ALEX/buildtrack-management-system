@@ -61,17 +61,35 @@ export const getWorkers = async (req, res) => {
     if (isActive !== undefined) where.isActive = isActive === 'true';
     if (search) {
       where[Op.or] = [
-        { fullName: { [Op.iLike]: `%${search}%` } },
-        { phone: { [Op.iLike]: `%${search}%` } },
-        { role: { [Op.iLike]: `%${search}%` } }
+        { fullName: { [Op.like]: `%${search}%` } },
+        { phone: { [Op.like]: `%${search}%` } },
+        { role: { [Op.like]: `%${search}%` } }
       ];
     }
 
     const workers = await Worker.findAll({
       where,
       include: [
-        { model: Attendance, as: 'attendances', attributes: ['id', 'date', 'status', 'hoursWorked', 'overtimeHours'] },
-        { model: WorkerPayment, as: 'payments', attributes: ['id', 'amount', 'paymentDate'] },
+ { 
+  model: Attendance,
+  as: 'attendances',
+  attributes: [
+    'id',
+    'date',
+    'status',
+    'hoursWorked',
+    'overtimeHours'
+  ]
+},
+      {
+    model: WorkerPayment,
+    as: 'payments',
+    attributes: [
+      'id',
+      'amount',
+      'paymentDate'
+    ]
+  },
         { model: Project, as: 'project', attributes: ['id', 'name'] }
       ],
       order: [['created_at', 'DESC']]

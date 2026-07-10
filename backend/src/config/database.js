@@ -1,57 +1,86 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import logger from '../utils/logger.js';
+import mysql2 from 'mysql2';
 
 dotenv.config();
 
-let sequelize;
-
-// Check if using SQLite or PostgreSQL
-const dbDialect = process.env.DB_DIALECT || 'sqlite';
-
-if (dbDialect === 'sqlite') {
-  // SQLite Configuration (Development)
-  sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: process.env.DB_STORAGE || './database.sqlite',
+// Force MySQL as the only dialect
+const sequelize = new Sequelize(
+  process.env.DB_NAME || 'buildtrack',
+  process.env.DB_USER || 'buildtrack',
+  process.env.DB_PASSWORD || 'alekx123!',
+  {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 3306,
+    dialect: 'mysql',
+    dialectModule: mysql2,
+    dialectOptions: {
+  charset: 'utf8mb4',
+  connectTimeout: 60000,
+      ...(process.env.DB_SSL === 'true' && {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      })
+    },
     logging: (msg) => logger.debug(msg),
     define: {
       timestamps: true,
       underscored: true,
       createdAt: 'created_at',
-      updatedAt: 'updated_at'
-    }
-  });
-  console.log('📦 Using SQLite database');
-} else {
-  // PostgreSQL Configuration (Production)
-  sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
-    {
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT || 5432,
-      dialect: 'postgres',
-      logging: (msg) => logger.debug(msg),
-      define: {
-        timestamps: true,
-        underscored: true,
-        createdAt: 'created_at',
-        updatedAt: 'updated_at'
-      },
-      dialectOptions: {
-        ssl: process.env.DB_SSL === 'true' ? { require: true, rejectUnauthorized: false } : false
-      },
-      pool: {
-        max: 10,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
-      }
-    }
-  );
-  console.log('🐘 Using PostgreSQL database');
-}
+      updatedAt: 'updated_at',
+      deletedAt: 'deleted_at',
+      paranoid: true
+    },
+    pool: {
+      max: parseInt(process.env.DB_POOL_MAX) || 10,
+      min: parseInt(process.env.DB_POOL_MIN) || 0,
+      acquire: parseInt(process.env.DB_POOL_ACQUIRE) || 30000,
+      idle: parseInt(process.env.DB_POOL_IDLE) || 10000
+    },
+    retry: {
+      max: 3,
+      match: [
+        /SequelizeConnectionError/,
+        /SequelizeConnectionRefusedError/,
+        /SequelizeHostNotFoundError/,
+        /SequelizeHostNotReachableError/,
+        /SequelizeInvalidConnectionError/,
+        /SequelizeConnectionTimedOutError/
+      ]
+    },
+    timezone: '+00:00'
+  }
+);
 
-export { sequelize };
+console.log('🐬 Using MySQL database');
+
+// Test the connection
+const testConnection = async () => {
+  try {
+    await sequelize.authenticate();
+    logger.info('✅ MySQL connection established successfully.');
+    return true;
+  } catch (error) {
+    logger.error('❌ Unable to connect to MySQL database:', error);
+    return false;
+  }
+};
+
+// Initialize database
+const initDatabase = async () => {
+  try {
+    const connected = await testConnection();
+    if (!connected) {
+      throw new Error('Failed to connect to database');
+    }
+    logger.info('✅ Database initialized successfully.');
+  } catch (error) {
+    logger.error('❌ Database initialization failed:', error);
+    process.exit(1);
+  }
+};
+
+export { sequelize, testConnection, initDatabase };

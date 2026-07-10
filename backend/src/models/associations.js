@@ -10,12 +10,14 @@ Project.hasMany(Expense, { foreignKey: 'projectId' });
 Expense.belongsTo(Project, { foreignKey: 'projectId' });
 
 Project.hasMany(Worker, { foreignKey: 'projectId' });
-Worker.belongsTo(Project, { foreignKey: 'projectId' });
+Worker.belongsTo(Project, {
+  foreignKey: 'projectId'
+});
 
-Worker.hasMany(Attendance, { foreignKey: 'workerId' });
-Attendance.belongsTo(Worker, { foreignKey: 'workerId' });
-
-Worker.hasMany(WorkerPayment, { foreignKey: 'workerId' });
+Worker.hasMany(WorkerPayment, {
+  foreignKey: 'workerId',
+  as: 'payments'
+});
 WorkerPayment.belongsTo(Worker, { foreignKey: 'workerId' });
 
 Project.hasMany(Material, { foreignKey: 'projectId' });

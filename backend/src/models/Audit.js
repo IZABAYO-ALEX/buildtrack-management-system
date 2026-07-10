@@ -17,7 +17,7 @@ const Audit = sequelize.define('Audit', {
     allowNull: false
   },
   details: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     allowNull: true
   },
   affectedRecord: {

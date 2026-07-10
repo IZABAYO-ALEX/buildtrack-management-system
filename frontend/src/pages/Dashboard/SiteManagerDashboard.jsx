@@ -8,7 +8,7 @@ import {
   ArrowDownRight, UserPlus, RefreshCw,
   TrendingUp, TrendingDown, AlertCircle,
   Eye, Edit, Trash2, X, Search, Filter,
-  FileText, Upload, Send, Activity
+  FileText, Upload, Send, Activity, CreditCard
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';

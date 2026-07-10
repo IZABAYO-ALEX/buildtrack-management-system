@@ -1,5 +1,5 @@
-import { sequelize } from '../config/database.js';
-import User from '../models/User.js';
+import { sequelize } from './src/config/database.js';
+import User from './src/models/User.js';
 import bcrypt from 'bcryptjs';
 
 const seedDatabase = async () => {

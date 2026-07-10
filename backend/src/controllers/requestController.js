@@ -73,9 +73,9 @@ export const getRequests = async (req, res) => {
     const requests = await Request.findAll({
       where,
       include: [
-        { model: User, as: 'requestor', attributes: ['id', 'fullName', 'email'] },
+        { model: User, as: 'requester', attributes: ['id', 'fullName', 'email'] },
         { model: User, as: 'approver', attributes: ['id', 'fullName', 'email'] },
-        { model: Project, attributes: ['id', 'name'] }
+        { model: Project, as: 'project', attributes: ['id', 'name'] }
       ],
       order: [['createdAt', 'DESC']]
     });

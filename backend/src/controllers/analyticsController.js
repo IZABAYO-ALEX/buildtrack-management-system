@@ -103,9 +103,15 @@ export const getWorkerProductivity = async (req, res) => {
       include: [{ model: Worker, as: 'worker', attributes: ['id', 'fullName', 'role'] }]
     });
 
-    const payments = await WorkerPayment.findAll({
-      where: { projectId }
-    });
+   const paymentWhere = {};
+
+if (projectId) {
+  paymentWhere.projectId = projectId;
+}
+
+const payments = await WorkerPayment.findAll({
+  where: paymentWhere
+});
 
     const workerStats = {};
     attendance.forEach(a => {

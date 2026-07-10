@@ -66,7 +66,7 @@ const Material = sequelize.define('Material', {
     field: 'remaining_quantity'
   },
   dailyConsumption: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     defaultValue: {},
     field: 'daily_consumption'
   },

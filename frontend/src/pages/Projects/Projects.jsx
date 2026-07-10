@@ -304,14 +304,12 @@ const Projects = () => {
         <ProjectForm
           isOpen={showCreateModal}
           onClose={() => {
-            setShowCreateModal(false);
-            resetForm();
-          }}
+  setShowCreateModal(false);
+}}
           onSuccess={() => {
-            setShowCreateModal(false);
-            resetForm();
-            fetchData();
-          }}
+  setShowCreateModal(false);
+  fetchData();
+}}
           users={users}
         />
 

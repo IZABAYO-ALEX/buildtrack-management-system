@@ -47,7 +47,7 @@ const Media = sequelize.define('Media', {
     field: 'mime_type'
   },
   tags: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     defaultValue: [],
     field: 'tags'
   },

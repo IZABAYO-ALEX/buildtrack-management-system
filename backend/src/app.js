@@ -65,6 +65,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import dailyReportRoutes from './routes/dailyReportRoutes.js';
+import requestRoutes from './routes/requestRoutes.js';
 
 // Routes
 app.use('/api/v1/auth', authRoutes);
@@ -81,6 +82,7 @@ app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/daily-reports', dailyReportRoutes);
+app.use('/api/v1/requests', requestRoutes);
 
 // Root route
 app.get('/', (req, res) => {

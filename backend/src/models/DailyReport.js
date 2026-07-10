@@ -28,12 +28,12 @@ const DailyReport = sequelize.define('DailyReport', {
     field: 'total_hours_worked'
   },
   materialsUsed: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     defaultValue: {},
     field: 'materials_used'
   },
   expenses: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     defaultValue: {},
     field: 'expenses'
   },
@@ -50,7 +50,7 @@ const DailyReport = sequelize.define('DailyReport', {
     type: DataTypes.UUID,
     allowNull: false,
     field: 'generated_by'
-  },
+},
   sentToAccountant: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,

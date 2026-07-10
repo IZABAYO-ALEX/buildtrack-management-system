@@ -7,6 +7,7 @@ import Material from '../models/Material.js';
 import DailyReport from '../models/DailyReport.js';
 import { Op } from 'sequelize';
 import logger from '../utils/logger.js';
+import Attendance from '../models/Attendance.js';
 
 const calculatePercentageChange = (current, previous) => {
   if (!previous || previous === 0) return 0;

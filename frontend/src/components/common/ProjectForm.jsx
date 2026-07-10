@@ -40,7 +40,9 @@ const ProjectForm = ({ isOpen, onClose, onSuccess, project = null, users = [] })
 
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('basic');
+  const [currentStep, setCurrentStep] = useState(1);
+  const [errors, setErrors] = useState({});
+  const totalSteps = 4;
 
   const projectTypes = [
     { value: 'residential', label: '🏠 Residential', icon: <Home size={16} /> },
@@ -70,6 +72,114 @@ const ProjectForm = ({ isOpen, onClose, onSuccess, project = null, users = [] })
     { value: 'medium', label: '🟡 Medium Risk' },
     { value: 'high', label: '🔴 High Risk' }
   ];
+
+  const steps = [
+    { number: 1, title: "Basic Info" },
+    { number: 2, title: "Project Details" },
+    { number: 3, title: "Project Team" },
+    { number: 4, title: "Advanced" }
+  ];
+
+  // Validation rules per step
+  const validateStep = (step) => {
+    const newErrors = {};
+    let isValid = true;
+
+    if (step === 1) {
+      if (!formData.name.trim()) {
+        newErrors.name = 'Project name is required';
+        isValid = false;
+      }
+      if (!formData.clientName.trim()) {
+        newErrors.clientName = 'Client name is required';
+        isValid = false;
+      }
+      if (!formData.clientEmail.trim()) {
+        newErrors.clientEmail = 'Client email is required';
+        isValid = false;
+      } else if (!/\S+@\S+\.\S+/.test(formData.clientEmail)) {
+        newErrors.clientEmail = 'Please enter a valid email address';
+        isValid = false;
+      }
+      if (!formData.clientPhone.trim()) {
+        newErrors.clientPhone = 'Client phone is required';
+        isValid = false;
+      }
+      if (!formData.location.trim()) {
+        newErrors.location = 'Location is required';
+        isValid = false;
+      }
+      if (!formData.budget) {
+        newErrors.budget = 'Budget is required';
+        isValid = false;
+      } else if (parseFloat(formData.budget) <= 0) {
+        newErrors.budget = 'Budget must be greater than 0';
+        isValid = false;
+      }
+      if (!formData.description.trim()) {
+        newErrors.description = 'Description is required';
+        isValid = false;
+      }
+    }
+
+    if (step === 2) {
+      if (!formData.projectType) {
+        newErrors.projectType = 'Project type is required';
+        isValid = false;
+      }
+      if (!formData.category.trim()) {
+        newErrors.category = 'Category is required';
+        isValid = false;
+      }
+      if (!formData.startDate) {
+        newErrors.startDate = 'Start date is required';
+        isValid = false;
+      }
+      if (!formData.endDate) {
+        newErrors.endDate = 'End date is required';
+        isValid = false;
+      }
+      if (!formData.siteArea) {
+        newErrors.siteArea = 'Site area is required';
+        isValid = false;
+      } else if (parseFloat(formData.siteArea) <= 0) {
+        newErrors.siteArea = 'Site area must be greater than 0';
+        isValid = false;
+      }
+      if (!formData.numberOfUnits) {
+        newErrors.numberOfUnits = 'Number of units is required';
+        isValid = false;
+      } else if (parseInt(formData.numberOfUnits) <= 0) {
+        newErrors.numberOfUnits = 'Number of units must be greater than 0';
+        isValid = false;
+      }
+      if (!formData.numberOfFloors) {
+        newErrors.numberOfFloors = 'Number of floors is required';
+        isValid = false;
+      } else if (parseInt(formData.numberOfFloors) <= 0) {
+        newErrors.numberOfFloors = 'Number of floors must be greater than 0';
+        isValid = false;
+      }
+      if (!formData.completionDate) {
+        newErrors.completionDate = 'Completion date is required';
+        isValid = false;
+      }
+    }
+
+    if (step === 3) {
+      if (!formData.siteManagerId) {
+        newErrors.siteManagerId = 'Site Manager is required';
+        isValid = false;
+      }
+      if (!formData.accountantId) {
+        newErrors.accountantId = 'Accountant is required';
+        isValid = false;
+      }
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   useEffect(() => {
     if (project) {
@@ -103,6 +213,20 @@ const ProjectForm = ({ isOpen, onClose, onSuccess, project = null, users = [] })
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate all steps before submitting
+    let allValid = true;
+    for (let step = 1; step <= totalSteps; step++) {
+      if (!validateStep(step)) {
+        allValid = false;
+        setCurrentStep(step);
+        toast.error(`Please complete all required fields in Step ${step}`);
+        break;
+      }
+    }
+
+    if (!allValid) return;
+
     setLoading(true);
 
     try {
@@ -150,12 +274,482 @@ const ProjectForm = ({ isOpen, onClose, onSuccess, project = null, users = [] })
     }
   };
 
-  const tabs = [
-    { id: 'basic', label: '📋 Basic Info' },
-    { id: 'details', label: '📊 Details' },
-    { id: 'team', label: '👥 Team' },
-    { id: 'advanced', label: '⚙️ Advanced' }
-  ];
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+        setErrors({});
+      }
+    }
+  };
+
+  const previousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      setErrors({});
+    }
+  };
+
+  const renderStepIndicator = () => {
+    return (
+      <div className="wizard-progress">
+        <div className="progress-info">
+          <span className="step-label">Step {currentStep} of {totalSteps}</span>
+          <span className="step-percent">{Math.round((currentStep / totalSteps) * 100)}%</span>
+        </div>
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${(currentStep / totalSteps) * 100}%` }}></div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderStepHeader = () => {
+    return (
+      <div className="wizard-header">
+        {steps.map(step => (
+          <div
+            key={step.number}
+            className={`wizard-step ${
+              currentStep === step.number ? "active" : currentStep > step.number ? "completed" : ""
+            }`}
+          >
+            <div className="step-circle">
+              {currentStep > step.number ? <CheckCircle size={18} /> : step.number}
+            </div>
+            <span>{step.title}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderFieldError = (fieldName) => {
+    if (errors[fieldName]) {
+      return <span className="field-error">{errors[fieldName]}</span>;
+    }
+    return null;
+  };
+
+  const renderBasicInfo = () => {
+    return (
+      <div className="tab-content">
+        <div className="form-row">
+          <div className="form-group full">
+            <label>Project Name <span className="required">*</span></label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Enter project name"
+              className={errors.name ? 'error' : ''}
+              required
+            />
+            {renderFieldError('name')}
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Client Name <span className="required">*</span></label>
+            <input
+              type="text"
+              value={formData.clientName}
+              onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+              placeholder="Enter client name"
+              className={errors.clientName ? 'error' : ''}
+              required
+            />
+            {renderFieldError('clientName')}
+          </div>
+          <div className="form-group">
+            <label>Client Email <span className="required">*</span></label>
+            <input
+              type="email"
+              value={formData.clientEmail}
+              onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+              placeholder="client@email.com"
+              className={errors.clientEmail ? 'error' : ''}
+              required
+            />
+            {renderFieldError('clientEmail')}
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Client Phone <span className="required">*</span></label>
+            <input
+              type="tel"
+              value={formData.clientPhone}
+              onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+              placeholder="+256 700 000 000"
+              className={errors.clientPhone ? 'error' : ''}
+              required
+            />
+            {renderFieldError('clientPhone')}
+          </div>
+          <div className="form-group">
+            <label>Location <span className="required">*</span></label>
+            <div className={`input-with-icon ${errors.location ? 'error' : ''}`}>
+              <MapPin size={18} />
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="Enter project location"
+                className={errors.location ? 'error' : ''}
+                required
+              />
+            </div>
+            {renderFieldError('location')}
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Budget <span className="required">*</span></label>
+            <div className={`input-with-icon ${errors.budget ? 'error' : ''}`}>
+              <DollarSign size={18} />
+              <input
+                type="number"
+                value={formData.budget}
+                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                placeholder="Enter budget"
+                required
+                min="0"
+                step="1000"
+                className={errors.budget ? 'error' : ''}
+              />
+            </div>
+            {renderFieldError('budget')}
+          </div>
+          <div className="form-group">
+            <label>Currency <span className="required">*</span></label>
+            <select
+              value={formData.currency}
+              onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+              required
+            >
+              <option value="UGX">🇺🇬 UGX</option>
+              <option value="USD">🇺🇸 USD</option>
+              <option value="EUR">🇪🇺 EUR</option>
+              <option value="KES">🇰🇪 KES</option>
+              <option value="TZS">🇹🇿 TZS</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group full">
+            <label>Description <span className="required">*</span></label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Describe the project"
+              rows="3"
+              className={errors.description ? 'error' : ''}
+              required
+            />
+            {renderFieldError('description')}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderProjectDetails = () => {
+    return (
+      <div className="tab-content">
+        <div className="form-row">
+          <div className="form-group">
+            <label>Status <span className="required">*</span></label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              required
+            >
+              {statuses.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Priority <span className="required">*</span></label>
+            <select
+              value={formData.priority}
+              onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+              required
+            >
+              {priorities.map(p => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Project Type <span className="required">*</span></label>
+            <select
+              value={formData.projectType}
+              onChange={(e) => setFormData({ ...formData, projectType: e.target.value })}
+              className={errors.projectType ? 'error' : ''}
+              required
+            >
+              {projectTypes.map(p => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+            {renderFieldError('projectType')}
+          </div>
+          <div className="form-group">
+            <label>Category <span className="required">*</span></label>
+            <input
+              type="text"
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              placeholder="e.g. Construction, Renovation"
+              className={errors.category ? 'error' : ''}
+              required
+            />
+            {renderFieldError('category')}
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Start Date <span className="required">*</span></label>
+            <div className={`input-with-icon ${errors.startDate ? 'error' : ''}`}>
+              <Calendar size={18} />
+              <input
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                className={errors.startDate ? 'error' : ''}
+                required
+              />
+            </div>
+            {renderFieldError('startDate')}
+          </div>
+          <div className="form-group">
+            <label>End Date <span className="required">*</span></label>
+            <div className={`input-with-icon ${errors.endDate ? 'error' : ''}`}>
+              <Calendar size={18} />
+              <input
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                className={errors.endDate ? 'error' : ''}
+                required
+              />
+            </div>
+            {renderFieldError('endDate')}
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Site Area (sq meters) <span className="required">*</span></label>
+            <input
+              type="number"
+              value={formData.siteArea}
+              onChange={(e) => setFormData({ ...formData, siteArea: e.target.value })}
+              placeholder="Enter site area"
+              min="0"
+              step="1"
+              className={errors.siteArea ? 'error' : ''}
+              required
+            />
+            {renderFieldError('siteArea')}
+          </div>
+          <div className="form-group">
+            <label>Number of Units <span className="required">*</span></label>
+            <input
+              type="number"
+              value={formData.numberOfUnits}
+              onChange={(e) => setFormData({ ...formData, numberOfUnits: e.target.value })}
+              placeholder="Enter number of units"
+              min="0"
+              step="1"
+              className={errors.numberOfUnits ? 'error' : ''}
+              required
+            />
+            {renderFieldError('numberOfUnits')}
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Number of Floors <span className="required">*</span></label>
+            <input
+              type="number"
+              value={formData.numberOfFloors}
+              onChange={(e) => setFormData({ ...formData, numberOfFloors: e.target.value })}
+              placeholder="Enter number of floors"
+              min="0"
+              step="1"
+              className={errors.numberOfFloors ? 'error' : ''}
+              required
+            />
+            {renderFieldError('numberOfFloors')}
+          </div>
+          <div className="form-group">
+            <label>Expected Completion Date <span className="required">*</span></label>
+            <div className={`input-with-icon ${errors.completionDate ? 'error' : ''}`}>
+              <Calendar size={18} />
+              <input
+                type="date"
+                value={formData.completionDate}
+                onChange={(e) => setFormData({ ...formData, completionDate: e.target.value })}
+                className={errors.completionDate ? 'error' : ''}
+                required
+              />
+            </div>
+            {renderFieldError('completionDate')}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderProjectTeam = () => {
+    return (
+      <div className="tab-content">
+        <div className="form-row">
+          <div className="form-group">
+            <label>Site Manager <span className="required">*</span></label>
+            <select
+              value={formData.siteManagerId}
+              onChange={(e) => setFormData({ ...formData, siteManagerId: e.target.value })}
+              className={errors.siteManagerId ? 'error' : ''}
+              required
+            >
+              <option value="">Select Site Manager</option>
+              {users.filter(u => u.role === 'site_manager').map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.fullName} ({u.email})
+                </option>
+              ))}
+            </select>
+            {renderFieldError('siteManagerId')}
+          </div>
+          <div className="form-group">
+            <label>Accountant <span className="required">*</span></label>
+            <select
+              value={formData.accountantId}
+              onChange={(e) => setFormData({ ...formData, accountantId: e.target.value })}
+              className={errors.accountantId ? 'error' : ''}
+              required
+            >
+              <option value="">Select Accountant</option>
+              {users.filter(u => u.role === 'accountant').map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.fullName} ({u.email})
+                </option>
+              ))}
+            </select>
+            {renderFieldError('accountantId')}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAdvanced = () => {
+    return (
+      <div className="tab-content">
+        <div className="form-row">
+          <div className="form-group">
+            <label>Risk Level <span className="required">*</span></label>
+            <select
+              value={formData.riskLevel}
+              onChange={(e) => setFormData({ ...formData, riskLevel: e.target.value })}
+              required
+            >
+              {riskLevels.map(r => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Tags</label>
+            <div className="tags-input">
+              <div className="tags-list">
+                {formData.tags.map(tag => (
+                  <span key={tag} className="tag">
+                    {tag}
+                    <button type="button" onClick={() => removeTag(tag)}>
+                      <X size={14} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="tag-input-wrapper">
+                <Tag size={18} />
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Add tag..."
+                />
+                <button type="button" onClick={addTag}>
+                  <Plus size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group full">
+            <label>Additional Notes <span className="required">*</span></label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Any additional notes about the project"
+              rows="3"
+              className={errors.notes ? 'error' : ''}
+              required
+            />
+            {renderFieldError('notes')}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderNavigationButtons = () => {
+    return (
+      <div className="form-navigation">
+        <div className="nav-buttons">
+          {currentStep > 1 && (
+            <button type="button" className="btn-prev" onClick={previousStep}>
+              Previous
+            </button>
+          )}
+          {currentStep < totalSteps ? (
+            <button type="button" className="btn-next" onClick={nextStep}>
+              Next Step
+            </button>
+          ) : (
+            <button type="submit" className="btn-submit" disabled={loading}>
+              {loading ? (
+                <span className="spinner"></span>
+              ) : (
+                <>
+                  {project ? 'Update Project' : 'Create Project'}
+                  <Send size={18} />
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -176,7 +770,7 @@ const ProjectForm = ({ isOpen, onClose, onSuccess, project = null, users = [] })
           >
             <div className="project-form-header">
               <div>
-                <h2>{project ? '✏️ Edit Project' : '🚀 Create New Project'}</h2>
+                <h2>{project ? '✏️ Edit Project' : '📋 New Project'}</h2>
                 <p>{project ? 'Update project details' : 'Fill in the project details below'}</p>
               </div>
               <button className="close-btn" onClick={onClose}>
@@ -184,363 +778,15 @@ const ProjectForm = ({ isOpen, onClose, onSuccess, project = null, users = [] })
               </button>
             </div>
 
-            <div className="project-form-tabs">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            {renderStepIndicator()}
+            {renderStepHeader()}
 
             <form onSubmit={handleSubmit} className="project-form-body">
-              {/* Basic Info Tab */}
-              {activeTab === 'basic' && (
-                <div className="tab-content">
-                  <div className="form-row">
-                    <div className="form-group full">
-                      <label>Project Name *</label>
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="Enter project name"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Client Name</label>
-                      <input
-                        type="text"
-                        value={formData.clientName}
-                        onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                        placeholder="Enter client name"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Client Email</label>
-                      <input
-                        type="email"
-                        value={formData.clientEmail}
-                        onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-                        placeholder="client@email.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Client Phone</label>
-                      <input
-                        type="tel"
-                        value={formData.clientPhone}
-                        onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                        placeholder="+256 700 000 000"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Location</label>
-                      <div className="input-with-icon">
-                        <MapPin size={18} />
-                        <input
-                          type="text"
-                          value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                          placeholder="Enter project location"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Budget *</label>
-                      <div className="input-with-icon">
-                        <DollarSign size={18} />
-                        <input
-                          type="number"
-                          value={formData.budget}
-                          onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                          placeholder="Enter budget"
-                          required
-                          min="0"
-                          step="1000"
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>Currency</label>
-                      <select
-                        value={formData.currency}
-                        onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                      >
-                        <option value="UGX">🇺🇬 UGX</option>
-                        <option value="USD">🇺🇸 USD</option>
-                        <option value="EUR">🇪�� EUR</option>
-                        <option value="KES">🇰🇪 KES</option>
-                        <option value="TZS">🇹🇿 TZS</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group full">
-                      <label>Description</label>
-                      <textarea
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Describe the project"
-                        rows="3"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Details Tab */}
-              {activeTab === 'details' && (
-                <div className="tab-content">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Status</label>
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      >
-                        {statuses.map(s => (
-                          <option key={s.value} value={s.value}>{s.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Priority</label>
-                      <select
-                        value={formData.priority}
-                        onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                      >
-                        {priorities.map(p => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Project Type</label>
-                      <select
-                        value={formData.projectType}
-                        onChange={(e) => setFormData({ ...formData, projectType: e.target.value })}
-                      >
-                        {projectTypes.map(p => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Category</label>
-                      <input
-                        type="text"
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        placeholder="e.g. Construction, Renovation"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Start Date</label>
-                      <div className="input-with-icon">
-                        <Calendar size={18} />
-                        <input
-                          type="date"
-                          value={formData.startDate}
-                          onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>End Date</label>
-                      <div className="input-with-icon">
-                        <Calendar size={18} />
-                        <input
-                          type="date"
-                          value={formData.endDate}
-                          onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Site Area (sq meters)</label>
-                      <input
-                        type="number"
-                        value={formData.siteArea}
-                        onChange={(e) => setFormData({ ...formData, siteArea: e.target.value })}
-                        placeholder="Enter site area"
-                        min="0"
-                        step="1"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Number of Units</label>
-                      <input
-                        type="number"
-                        value={formData.numberOfUnits}
-                        onChange={(e) => setFormData({ ...formData, numberOfUnits: e.target.value })}
-                        placeholder="Enter number of units"
-                        min="0"
-                        step="1"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Number of Floors</label>
-                      <input
-                        type="number"
-                        value={formData.numberOfFloors}
-                        onChange={(e) => setFormData({ ...formData, numberOfFloors: e.target.value })}
-                        placeholder="Enter number of floors"
-                        min="0"
-                        step="1"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Expected Completion Date</label>
-                      <div className="input-with-icon">
-                        <Calendar size={18} />
-                        <input
-                          type="date"
-                          value={formData.completionDate}
-                          onChange={(e) => setFormData({ ...formData, completionDate: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Team Tab */}
-              {activeTab === 'team' && (
-                <div className="tab-content">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Site Manager</label>
-                      <select
-                        value={formData.siteManagerId}
-                        onChange={(e) => setFormData({ ...formData, siteManagerId: e.target.value })}
-                      >
-                        <option value="">Select Site Manager</option>
-                        {users.filter(u => u.role === 'site_manager').map(u => (
-                          <option key={u.id} value={u.id}>
-                            {u.fullName} ({u.email})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Accountant</label>
-                      <select
-                        value={formData.accountantId}
-                        onChange={(e) => setFormData({ ...formData, accountantId: e.target.value })}
-                      >
-                        <option value="">Select Accountant</option>
-                        {users.filter(u => u.role === 'accountant').map(u => (
-                          <option key={u.id} value={u.id}>
-                            {u.fullName} ({u.email})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Advanced Tab */}
-              {activeTab === 'advanced' && (
-                <div className="tab-content">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Risk Level</label>
-                      <select
-                        value={formData.riskLevel}
-                        onChange={(e) => setFormData({ ...formData, riskLevel: e.target.value })}
-                      >
-                        {riskLevels.map(r => (
-                          <option key={r.value} value={r.value}>{r.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Tags</label>
-                      <div className="tags-input">
-                        <div className="tags-list">
-                          {formData.tags.map(tag => (
-                            <span key={tag} className="tag">
-                              {tag}
-                              <button type="button" onClick={() => removeTag(tag)}>
-                                <X size={14} />
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                        <div className="tag-input-wrapper">
-                          <Tag size={18} />
-                          <input
-                            type="text"
-                            value={tagInput}
-                            onChange={(e) => setTagInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Add tag..."
-                          />
-                          <button type="button" onClick={addTag}>
-                            <Plus size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group full">
-                      <label>Additional Notes</label>
-                      <textarea
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        placeholder="Any additional notes about the project"
-                        rows="3"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="project-form-footer">
-                <button type="button" className="btn-cancel" onClick={onClose}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-submit" disabled={loading}>
-                  {loading ? (
-                    <span className="spinner"></span>
-                  ) : (
-                    <>
-                      {project ? 'Update Project' : 'Create Project'}
-                      <Send size={18} />
-                    </>
-                  )}
-                </button>
-              </div>
+              {currentStep === 1 && renderBasicInfo()}
+              {currentStep === 2 && renderProjectDetails()}
+              {currentStep === 3 && renderProjectTeam()}
+              {currentStep === 4 && renderAdvanced()}
+              {renderNavigationButtons()}
             </form>
           </motion.div>
         </motion.div>
