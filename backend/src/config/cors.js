@@ -1,36 +1,65 @@
-import cors from 'cors';
+import cors from "cors";
+import config from "./config.js";
 
+/**
+ * Allowed origins
+ * Production uses the deployed frontend.
+ * Development also allows localhost.
+ */
 const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:4173',
-  'http://127.0.0.1:4173'
-];
+  config.cors.origin,
+
+  ...(config.app.env !== "production"
+    ? [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173"
+      ]
+    : [])
+].filter(Boolean);
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+  origin(origin, callback) {
+    // Allow Postman, server-to-server requests, health checks
+    if (!origin) {
+      return callback(null, true);
     }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`❌ CORS blocked: ${origin}`);
+
+    callback(new Error("Not allowed by CORS"));
   },
+
   credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Accept',
-    'Origin',
-    'Access-Control-Allow-Origin',
-    'Access-Control-Allow-Headers',
-    'Access-Control-Allow-Methods'
+
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS"
   ],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept"
+  ],
+
+  exposedHeaders: [
+    "Content-Range",
+    "X-Content-Range"
+  ],
+
+  optionsSuccessStatus: 200,
+
   maxAge: 86400
 };
 

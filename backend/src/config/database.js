@@ -1,23 +1,41 @@
+// src/config/database.js
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
+import mysql2 from 'mysql2';
 import logger from '../utils/logger.js';
 
 dotenv.config();
 
-// Create Sequelize instance with MySQL configuration
+/**
+ * BuildTrack Database Configuration
+ * Supports:
+ * - Local MySQL development
+ * - Railway Cloud MySQL production
+ */
+
+const isProduction = process.env.NODE_ENV === 'production';
+
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'buildtrack_db',
+  process.env.DB_NAME || 'railway',
   process.env.DB_USER || 'root',
   process.env.DB_PASSWORD || '',
   {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
+    host: process.env.DB_HOST || 'zephyr.proxy.rlwy.net',
+    port: Number(process.env.DB_PORT || 11964),
+
     dialect: 'mysql',
-    dialectModule: await import('mysql2'),
+
+    // Correct mysql2 driver for Sequelize
+    dialectModule: mysql2,
+
+    logging: isProduction
+      ? false
+      : (message) => logger.debug(message),
+
     dialectOptions: {
       charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci',
       connectTimeout: 60000,
+
       ...(process.env.DB_SSL === 'true' && {
         ssl: {
           require: true,
@@ -25,7 +43,10 @@ const sequelize = new Sequelize(
         }
       })
     },
-    logging: (msg) => logger.debug(msg),
+
+    /**
+     * Model defaults
+     */
     define: {
       timestamps: true,
       underscored: true,
@@ -34,14 +55,27 @@ const sequelize = new Sequelize(
       deletedAt: 'deleted_at',
       paranoid: true
     },
+
+    /**
+     * Connection pool
+     */
     pool: {
       max: parseInt(process.env.DB_POOL_MAX) || 10,
       min: parseInt(process.env.DB_POOL_MIN) || 0,
-      acquire: parseInt(process.env.DB_POOL_ACQUIRE) || 30000,
+      acquire: parseInt(process.env.DB_POOL_ACQUIRE) || 60000,
       idle: parseInt(process.env.DB_POOL_IDLE) || 10000
     },
+
+    /**
+     * Timezone
+     */
+    timezone: '+00:00',
+
+    /**
+     * Automatic retry
+     */
     retry: {
-      max: 3,
+      max: 5,
       match: [
         /SequelizeConnectionError/,
         /SequelizeConnectionRefusedError/,
@@ -50,37 +84,38 @@ const sequelize = new Sequelize(
         /SequelizeInvalidConnectionError/,
         /SequelizeConnectionTimedOutError/
       ]
-    },
-    timezone: '+00:00'
+    }
   }
 );
 
-console.log('🐬 Using MySQL database');
-
-// Test the connection
-const testConnection = async () => {
+/**
+ * Test database connection
+ */
+export async function testConnection() {
   try {
     await sequelize.authenticate();
-    logger.info('✅ MySQL connection established successfully.');
+    logger.info(
+      `✅ Database connected successfully (${process.env.DB_NAME || 'railway'})`
+    );
     return true;
   } catch (error) {
-    logger.error('❌ Unable to connect to MySQL database:', error);
+    logger.error('❌ Database connection failed:', error.message);
     return false;
   }
-};
+}
 
-// Initialize database
-const initDatabase = async () => {
-  try {
-    const connected = await testConnection();
-    if (!connected) {
-      throw new Error('Failed to connect to database');
-    }
-    logger.info('✅ Database initialized successfully.');
-  } catch (error) {
-    logger.error('❌ Database initialization failed:', error);
+/**
+ * Initialize database
+ */
+export async function initDatabase() {
+  const connected = await testConnection();
+
+  if (!connected) {
+    logger.error('Database initialization failed');
     process.exit(1);
   }
-};
 
-export { sequelize, testConnection, initDatabase };
+  logger.info('🚀 Database initialized successfully');
+}
+
+export { sequelize };
