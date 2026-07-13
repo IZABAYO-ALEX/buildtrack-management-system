@@ -1,23 +1,23 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import logger from '../utils/logger.js';
-import mysql2 from 'mysql2';
 
 dotenv.config();
 
-// Force MySQL as the only dialect
+// Create Sequelize instance with MySQL configuration
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'buildtrack',
-  process.env.DB_USER || 'buildtrack',
-  process.env.DB_PASSWORD || 'alekx123!',
+  process.env.DB_NAME || 'buildtrack_db',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASSWORD || '',
   {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
-    dialectModule: mysql2,
+    dialectModule: await import('mysql2'),
     dialectOptions: {
-  charset: 'utf8mb4',
-  connectTimeout: 60000,
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
+      connectTimeout: 60000,
       ...(process.env.DB_SSL === 'true' && {
         ssl: {
           require: true,

@@ -3,7 +3,7 @@ import Expense from '../models/Expense.js';
 import Worker from '../models/Worker.js';
 import User from '../models/User.js';
 import Audit from '../models/Audit.js';
-import { v4 as uuidv4 } from 'uuid';
+//import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
 import logger from '../utils/logger.js';
 
@@ -116,14 +116,17 @@ export const getProjects = async (req, res) => {
   try {
     const { status, search, includeArchived, page = 1, limit = 20 } = req.query;
     const where = {};
+    if(req.user.role === 'contractor'){
+    where.contractorId = req.user.id;
+}
 
     if (status) where.status = status;
     if (!includeArchived) where.isArchived = false;
     if (search) {
       where[Op.or] = [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { projectCode: { [Op.iLike]: `%${search}%` } },
-        { clientName: { [Op.iLike]: `%${search}%` } }
+        { name: { [Op.like]: `%${search}%` } },
+        { projectCode: { [Op.like]: `%${search}%` } },
+        { clientName: { [Op.like]: `%${search}%` } }
       ];
     }
 

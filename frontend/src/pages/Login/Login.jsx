@@ -78,9 +78,9 @@ const Login = () => {
 
   const fillDemoCredentials = (role) => {
     const credentials = {
-      contractor: { email: 'contractor@buildtrack.com', password: 'password123' },
-      site_manager: { email: 'manager@buildtrack.com', password: 'password123' },
-      accountant: { email: 'accountant@buildtrack.com', password: 'password123' }
+      contractor: { email: '', password: '' },
+      site_manager: { email: '', password: '' },
+      accountant: { email: '', password: '' }
     };
     const cred = credentials[role];
     if (cred) {
@@ -357,13 +357,13 @@ const Login = () => {
 
               <div className="signup-section">
                 <p className="signup-text">
-                  Don't have an account? <Link to="/signup" className="signup-link">Create one now</Link>
+                  Don't have an account? <Link to="/signup" className="signup-link">Create account</Link>
                 </p>
               </div>
 
               <div className="security-badge">
-                <Shield size={14} />
-                <span>Secured with 256-bit encryption</span>
+                <Shield size={12} />
+                <span>buildtrack the future of construction management</span>
               </div>
             </div>
           </motion.div>

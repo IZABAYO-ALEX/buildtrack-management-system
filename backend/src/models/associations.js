@@ -11,7 +11,8 @@ Expense.belongsTo(Project, { foreignKey: 'projectId' });
 
 Project.hasMany(Worker, { foreignKey: 'projectId' });
 Worker.belongsTo(Project, {
-  foreignKey: 'projectId'
+  foreignKey: 'projectId',
+  as: 'project'
 });
 
 Worker.hasMany(WorkerPayment, {

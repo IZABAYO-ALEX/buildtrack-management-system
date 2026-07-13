@@ -274,8 +274,8 @@ Audit.belongsTo(User, {
 // ======================================================
 // EXPORTS
 // ======================================================
-console.log("WORKER COLUMNS:");
-console.log(Object.keys(Worker.rawAttributes));
+//console.log("WORKER COLUMNS:");
+//console.log(Object.keys(Worker.rawAttributes));
 export {
   sequelize,
   User,
