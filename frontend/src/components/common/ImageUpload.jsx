@@ -81,7 +81,7 @@ const ImageUpload = ({ onUpload, multiple = false, maxFiles = 5, accept = 'image
         <div className="image-preview-grid">
           {images.map((img, index) => (
             <div key={index} className="image-preview-item">
-              <img src={`http://localhost:3000${img.url}`} alt={`Upload ${index}`} />
+              <img src={`${import.meta.env.VITE_API_URL}${img.url}`} alt={`Upload ${index}`} />
               <button className="remove-image-btn" onClick={() => removeImage(index)}>
                 <X size={16} />
               </button>

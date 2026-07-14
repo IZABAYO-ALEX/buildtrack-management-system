@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
+import nodemailer from 'nodemailer';
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -22,7 +24,17 @@ const generateRefreshToken = (user) => {
     { expiresIn: process.env.JWT_REFRESH_EXPIRY || '30d' }
   );
 };
-
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+};
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -355,13 +367,45 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour
     await user.save();
 
-    // TODO: Send email with reset link
-    logger.info(`✅ Password reset requested for: ${email}`);
+    // Send email with reset link
+try {
+  const transporter = createTransporter();
+  const resetLink = `${process.env.CORS_ORIGIN || 'https://buildtrack-management-system.vercel.app'}/reset-password?token=${resetToken}`;
 
-    return res.json({
-      success: true,
-      message: 'Password reset link sent to your email'
-    });
+  await transporter.sendMail({
+    from: `"BuildTrack" <${process.env.EMAIL_FROM || 'noreply@buildtrack.com'}>`,
+    to: email,
+    subject: 'Password Reset Request',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #6366f1;">BuildTrack</h1>
+        <h2>Reset Your Password</h2>
+        <p>You requested to reset your password. Click the button below to reset it:</p>
+        <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #6366f1; color: white; text-decoration: none; border-radius: 8px; margin: 20px 0;">
+          Reset Password
+        </a>
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; background: #f3f4f6; padding: 10px; border-radius: 4px;">${resetLink}</p>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+        <hr style="border: 1px solid #e5e7eb;">
+        <p style="color: #6b7280; font-size: 12px;">BuildTrack - Construction Management Platform</p>
+      </div>
+    `
+  });
+
+  logger.info(`✅ Password reset email sent to: ${email}`);
+} catch (emailError) {
+  logger.error('Email sending error:', emailError);
+  // Continue even if email fails - user can still try again
+}
+
+logger.info(`✅ Password reset requested for: ${email}`);
+
+return res.json({
+  success: true,
+  message: 'Password reset link sent to your email'
+});
   } catch (error) {
     logger.error('Forgot password error:', error);
     return res.status(500).json({

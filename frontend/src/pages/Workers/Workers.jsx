@@ -233,7 +233,7 @@ const Workers = () => {
                 <div className="worker-card-header">
                   <div className="worker-avatar" onClick={() => openViewModal(worker)}>
                     {worker.photoUrl ? (
-                      <img src={`http://localhost:3000${worker.photoUrl}`} alt={worker.fullName} />
+                      const imageUrl = `${import.meta.env.VITE_API_URL}/uploads/${image}`;
                     ) : (
                       worker.fullName.charAt(0).toUpperCase()
                     )}
@@ -409,7 +409,7 @@ const Workers = () => {
                     <div className="photo-upload">
                       {photoPreview ? (
                         <div className="photo-preview">
-                          <img src={photoPreview.startsWith('data:') ? photoPreview : `http://localhost:3000${photoPreview}`} alt="Preview" />
+                          <img src={photoPreview.startsWith('data:') ? photoPreview : `${import.meta.env.VITE_API_URL}${photoPreview}`} alt="Preview" />
                           <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}>
                             <X size={16} />
                           </button>
@@ -509,7 +509,7 @@ const Workers = () => {
                 <div className="view-section">
                   <div className="view-avatar">
                     {selectedWorker.photoUrl ? (
-                      <img src={`http://localhost:3000${selectedWorker.photoUrl}`} alt={selectedWorker.fullName} />
+                      <img src={`${import.meta.env.VITE_API_URL}${selectedWorker.photoUrl}`} alt={selectedWorker.fullName} />
                     ) : (
                       <div className="avatar-placeholder">
                         {selectedWorker.fullName.charAt(0).toUpperCase()}

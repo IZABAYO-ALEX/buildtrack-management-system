@@ -2,6 +2,7 @@ import { sequelize } from '../config/database.js';
 import redisClient from '../config/redis.js';
 import os from 'os';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 export const healthCheck = async (req, res) => {
   const health = {

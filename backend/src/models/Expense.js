@@ -4,10 +4,12 @@ import { sequelize } from '../config/database.js';
 const Expense = sequelize.define(
   'Expense',
   {
-    id: {
-      type: DataTypes.CHAR(36),
-      primaryKey: true,
-      allowNull: false
+    iid: {
+  type: DataTypes.UUID,
+  defaultValue: DataTypes.UUIDV4,  // ← ADD THIS LINE
+  primaryKey: true,
+  allowNull: false
+
     },
 
     projectId: {

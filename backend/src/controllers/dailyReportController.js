@@ -6,6 +6,7 @@ import Worker from '../models/Worker.js';
 import Project from '../models/Project.js';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 export const generateDailyReport = async (req, res) => {
   try {

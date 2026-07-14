@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Audit from '../models/Audit.js';
 import NotificationService from '../services/notificationService.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 export const createExpense = async (req, res) => {
   try {

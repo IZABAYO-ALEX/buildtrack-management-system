@@ -13,7 +13,7 @@ export const createWorker = async (req, res) => {
     const existingWorkers = await Worker.findAll({
       where: {
         [Op.or]: [
-          { fullName: { [Op.iLike]: fullName } },
+          { fullName: { [Op.like]: fullName } },
           { phone: phone || null }
         ],
         projectId,

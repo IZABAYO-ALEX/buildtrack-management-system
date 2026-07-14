@@ -3,6 +3,7 @@ import Project from '../models/Project.js';
 import User from '../models/User.js';
 import NotificationService from '../services/notificationService.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 export const createRequest = async (req, res) => {
   try {

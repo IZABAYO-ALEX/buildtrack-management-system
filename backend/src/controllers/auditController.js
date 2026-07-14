@@ -1,6 +1,7 @@
 import Audit from '../models/Audit.js';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 export const getAudits = async (req, res) => {
   try {

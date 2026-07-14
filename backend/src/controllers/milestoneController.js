@@ -2,6 +2,7 @@ import Milestone from '../models/Milestone.js';
 import Project from '../models/Project.js';
 import Audit from '../models/Audit.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 export const createMilestone = async (req, res) => {
   try {

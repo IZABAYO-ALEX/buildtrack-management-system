@@ -5,6 +5,7 @@ import Expense from '../models/Expense.js';
 import Worker from '../models/Worker.js';
 import NotificationService from '../services/notificationService.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 class ScheduleReports {
   constructor() {

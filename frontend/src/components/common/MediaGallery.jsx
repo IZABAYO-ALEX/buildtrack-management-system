@@ -136,9 +136,9 @@ const MediaGallery = ({ projectId }) => {
             >
               <div className="media-preview">
                 {item.type === 'image' ? (
-                  <img src={`http://localhost:3000${item.url}`} alt={item.title} />
+                  <img src={`${import.meta.env.VITE_API_URL}${item.url}`} alt={item.title} />
                 ) : item.type === 'video' ? (
-                  <video src={`http://localhost:3000${item.url}`} />
+                  <video src={`${import.meta.env.VITE_API_URL}${item.url}`} />
                 ) : (
                   <div className="document-icon">
                     {getMediaIcon(item.type)}
@@ -147,7 +147,7 @@ const MediaGallery = ({ projectId }) => {
                 )}
                 <div className="media-overlay">
                   <a 
-                    href={`http://localhost:3000${item.url}`}
+                    href={`${import.meta.env.VITE_API_URL}${item.url}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="view-btn"

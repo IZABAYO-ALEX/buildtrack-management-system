@@ -81,21 +81,28 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-export const authorize = (roles = []) => {
+// src/middleware/auth.js
+export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: 'Authentication required',
-        code: 'NO_TOKEN'
+        message: 'Authentication required'
       });
     }
 
-    if (roles.length > 0 && !roles.includes(req.user.role)) {
+    // If no roles specified, allow any authenticated user
+    if (roles.length === 0) {
+      return next();
+    }
+
+    // Check if user's role matches any allowed role
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message: 'Insufficient permissions',
-        code: 'INSUFFICIENT_PERMISSIONS'
+        requiredRoles: roles,
+        userRole: req.user.role
       });
     }
 

@@ -103,13 +103,14 @@ const config = {
   },
 
   database: {
-    host: 'zephyr.proxy.rlwy.net', // Your Railway host
-    port: 11964, // Your Railway port
-    user: 'root',
-    password: 'hhhhjjdjdj',
-    name: 'railway',
-    ssl: true, // SSL enabled for production
-    dialect: 'mysql',
+    host: process.env.DB_HOST,// Your Railway host
+    port: parseNumber(process.env.DB_PORT, 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    name: process.env.DB_NAME,
+    ssl: parseBoolean(process.env.DB_SSL, false),
+    dialect: process.env.DB_DIALECT || 'mysql',
+    
     dialectModule: await import('mysql2'),
     dialectOptions: {
       charset: 'utf8mb4',
@@ -142,7 +143,7 @@ const config = {
   },
 
   jwt: {
-    secret: '6d9b1a1f5c3a3787a87f267c0b6fe008a185ab', // Your JWT secret
+    secret: process.env.JWT_SECRET, // Your JWT secret
     expiry: process.env.JWT_EXPIRY || '7d',
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '30d',
     issuer: process.env.JWT_ISSUER || 'buildtrack',
@@ -150,7 +151,7 @@ const config = {
   },
 
   cors: {
-    origin: 'https://buildtrack-management-system.vercel.app', // Your frontend URL
+    origin: process.env.CORS_ORIGIN, // Your frontend URL
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
@@ -229,7 +230,7 @@ const config = {
   },
 
   urls: {
-    client: 'https://buildtrack-management-system.vercel.app',
+    client: process.env.CORS_ORIGIN,
     api: process.env.API_URL || `http://localhost:${parseNumber(process.env.PORT, 10000)}`,
     docs: process.env.API_DOCS_URL || '/api-docs'
   }

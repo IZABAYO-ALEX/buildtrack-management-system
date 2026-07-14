@@ -24,12 +24,12 @@ import Audit from './Audit.js';
 
 // Contractor owns projects
 User.hasMany(Project, {
-  foreignKey: 'contractor_id',
+  foreignKey: 'contractorId',
   as: 'projects'
 });
 
 Project.belongsTo(User, {
-  foreignKey: 'contractor_id',
+  foreignKey: 'contractorId',
   as: 'contractor'
 });
 

@@ -6,6 +6,7 @@ import WorkerPayment from '../models/WorkerPayment.js';
 import Material from '../models/Material.js';
 import Attendance from '../models/Attendance.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 export const getExpenseReport = async (req, res) => {
   try {

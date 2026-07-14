@@ -2,6 +2,7 @@ import Attendance from '../models/Attendance.js';
 import Worker from '../models/Worker.js';
 import Audit from '../models/Audit.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 export const recordAttendance = async (req, res) => {
   try {

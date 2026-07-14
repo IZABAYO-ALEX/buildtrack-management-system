@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Audit from '../models/Audit.js';
 import bcrypt from 'bcryptjs';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 export const getUsers = async (req, res) => {
   try {
