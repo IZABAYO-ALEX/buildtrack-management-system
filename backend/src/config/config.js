@@ -1,4 +1,4 @@
-// src/config.js
+// src/config/config.js
 import dotenv from "dotenv";
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -103,15 +103,14 @@ const config = {
   },
 
   database: {
-    host: process.env.DB_HOST,// Your Railway host
+    host: process.env.DB_HOST,
     port: parseNumber(process.env.DB_PORT, 3306),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     name: process.env.DB_NAME,
-    ssl: parseBoolean(process.env.DB_SSL, false),
+    ssl: parseBoolean(process.env.DB_SSL, true),
     dialect: process.env.DB_DIALECT || 'mysql',
-    
-    dialectModule: await import('mysql2'),
+    dialectModule: 'mysql2',
     dialectOptions: {
       charset: 'utf8mb4',
       collate: 'utf8mb4_unicode_ci',
@@ -143,7 +142,7 @@ const config = {
   },
 
   jwt: {
-    secret: process.env.JWT_SECRET, // Your JWT secret
+    secret: process.env.JWT_SECRET,
     expiry: process.env.JWT_EXPIRY || '7d',
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '30d',
     issuer: process.env.JWT_ISSUER || 'buildtrack',
@@ -151,7 +150,7 @@ const config = {
   },
 
   cors: {
-    origin: process.env.CORS_ORIGIN, // Your frontend URL
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
@@ -162,7 +161,7 @@ const config = {
       'X-Refresh-Token'
     ],
     exposedHeaders: ['X-Refresh-Token'],
-    maxAge: 86400 // 24 hours
+    maxAge: 86400
   },
 
   redis: {
@@ -206,7 +205,7 @@ const config = {
   },
 
   upload: {
-    maxFileSize: parseNumber(process.env.MAX_FILE_SIZE, 50 * 1024 * 1024), // 50MB
+    maxFileSize: parseNumber(process.env.MAX_FILE_SIZE, 50 * 1024 * 1024),
     allowedMimeTypes: [
       'image/jpeg', 
       'image/png', 

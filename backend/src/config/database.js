@@ -3,6 +3,7 @@ import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import mysql2 from 'mysql2';
 import logger from '../utils/logger.js';
+import config from './config.js';
 
 dotenv.config();
 
@@ -15,13 +16,23 @@ dotenv.config();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Use config values with fallbacks
+const dbConfig = {
+  host: config.database.host || process.env.DB_HOST || 'zephyr.proxy.rlwy.net',
+  port: config.database.port || Number(process.env.DB_PORT) || 11964,
+  user: config.database.user || process.env.DB_USER || 'root',
+  password: config.database.password || process.env.DB_PASSWORD || '',
+  name: config.database.name || process.env.DB_NAME || 'railway',
+  ssl: config.database.ssl || process.env.DB_SSL === 'true' || true
+};
+
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'railway',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || '',
+  dbConfig.name,
+  dbConfig.user,
+  dbConfig.password,
   {
-    host: process.env.DB_HOST || 'zephyr.proxy.rlwy.net',
-    port: Number(process.env.DB_PORT || 11964),
+    host: dbConfig.host,
+    port: dbConfig.port,
 
     dialect: 'mysql',
 
@@ -35,13 +46,10 @@ const sequelize = new Sequelize(
     dialectOptions: {
       charset: 'utf8mb4',
       connectTimeout: 60000,
-
-      ...(process.env.DB_SSL === 'true' && {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false
-        }
-      })
+      ssl: dbConfig.ssl ? {
+        require: true,
+        rejectUnauthorized: false
+      } : false
     },
 
     /**
@@ -95,11 +103,18 @@ export async function testConnection() {
   try {
     await sequelize.authenticate();
     logger.info(
-      `✅ Database connected successfully (${process.env.DB_NAME || 'railway'})`
+      `✅ Database connected successfully (${dbConfig.name})`
     );
     return true;
   } catch (error) {
     logger.error('❌ Database connection failed:', error.message);
+    logger.error('Connection details:', {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      database: dbConfig.name,
+      user: dbConfig.user,
+      ssl: dbConfig.ssl
+    });
     return false;
   }
 }
@@ -118,4 +133,4 @@ export async function initDatabase() {
   logger.info('🚀 Database initialized successfully');
 }
 
-export { sequelize };
+export { sequelize, dbConfig };
