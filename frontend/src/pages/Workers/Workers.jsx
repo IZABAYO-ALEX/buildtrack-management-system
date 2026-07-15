@@ -33,6 +33,8 @@ const Workers = () => {
     joinedDate: ''
   });
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -152,7 +154,8 @@ const Workers = () => {
       projectId: worker.projectId,
       joinedDate: worker.joinedDate || ''
     });
-    setPhotoPreview(worker.photoUrl);
+    // Fix: Use the full URL for photo preview
+    setPhotoPreview(worker.photoUrl ? `${API_URL}/uploads/${worker.photoUrl}` : null);
     setShowEditModal(true);
   };
 
@@ -233,9 +236,22 @@ const Workers = () => {
                 <div className="worker-card-header">
                   <div className="worker-avatar" onClick={() => openViewModal(worker)}>
                     {worker.photoUrl ? (
-                      const imageUrl = `${import.meta.env.VITE_API_URL}/uploads/${image}`;
+                      <img 
+                        src={`${API_URL}/uploads/${worker.photoUrl}`} 
+                        alt={worker.fullName}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                          const parent = e.target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="worker-avatar-placeholder">${worker.fullName?.charAt(0).toUpperCase()}</div>`;
+                          }
+                        }}
+                      />
                     ) : (
-                      worker.fullName.charAt(0).toUpperCase()
+                      <div className="worker-avatar-placeholder">
+                        {worker.fullName?.charAt(0).toUpperCase()}
+                      </div>
                     )}
                   </div>
                   <div className="worker-actions">
@@ -409,7 +425,10 @@ const Workers = () => {
                     <div className="photo-upload">
                       {photoPreview ? (
                         <div className="photo-preview">
-                          <img src={photoPreview.startsWith('data:') ? photoPreview : `${import.meta.env.VITE_API_URL}${photoPreview}`} alt="Preview" />
+                          <img 
+                            src={photoPreview.startsWith('data:') ? photoPreview : `${API_URL}${photoPreview}`} 
+                            alt="Preview" 
+                          />
                           <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}>
                             <X size={16} />
                           </button>
@@ -509,10 +528,21 @@ const Workers = () => {
                 <div className="view-section">
                   <div className="view-avatar">
                     {selectedWorker.photoUrl ? (
-                      <img src={`${import.meta.env.VITE_API_URL}${selectedWorker.photoUrl}`} alt={selectedWorker.fullName} />
+                      <img 
+                        src={`${API_URL}${selectedWorker.photoUrl}`} 
+                        alt={selectedWorker.fullName}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                          const parent = e.target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="avatar-placeholder">${selectedWorker.fullName?.charAt(0).toUpperCase()}</div>`;
+                          }
+                        }}
+                      />
                     ) : (
                       <div className="avatar-placeholder">
-                        {selectedWorker.fullName.charAt(0).toUpperCase()}
+                        {selectedWorker.fullName?.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
