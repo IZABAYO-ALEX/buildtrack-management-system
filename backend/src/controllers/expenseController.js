@@ -255,3 +255,11 @@ export const deleteExpense = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+export default {
+  createExpense,
+  approveExpense,
+  rejectExpense,
+  getExpenses,
+  updateExpense,
+  deleteExpense
+};
