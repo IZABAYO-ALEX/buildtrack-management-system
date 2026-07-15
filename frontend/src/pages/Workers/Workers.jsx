@@ -12,6 +12,8 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import api, { workerService, projectService } from '../../services/api';
 import './Workers.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const Workers = () => {
   const [workers, setWorkers] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -32,8 +34,6 @@ const Workers = () => {
     projectId: '',
     joinedDate: ''
   });
-
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   useEffect(() => {
     fetchData();
@@ -170,8 +170,8 @@ const Workers = () => {
   };
 
   const filteredWorkers = workers.filter(worker =>
-    worker.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    worker.role.toLowerCase().includes(searchTerm.toLowerCase())
+    worker.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    worker.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -244,13 +244,16 @@ const Workers = () => {
                           e.target.style.display = 'none';
                           const parent = e.target.parentElement;
                           if (parent) {
-                            parent.innerHTML = `<div class="worker-avatar-placeholder">${worker.fullName?.charAt(0).toUpperCase()}</div>`;
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'worker-avatar-placeholder';
+                            placeholder.textContent = worker.fullName?.charAt(0).toUpperCase() || 'W';
+                            parent.appendChild(placeholder);
                           }
                         }}
                       />
                     ) : (
                       <div className="worker-avatar-placeholder">
-                        {worker.fullName?.charAt(0).toUpperCase()}
+                        {worker.fullName?.charAt(0).toUpperCase() || 'W'}
                       </div>
                     )}
                   </div>
@@ -536,13 +539,16 @@ const Workers = () => {
                           e.target.style.display = 'none';
                           const parent = e.target.parentElement;
                           if (parent) {
-                            parent.innerHTML = `<div class="avatar-placeholder">${selectedWorker.fullName?.charAt(0).toUpperCase()}</div>`;
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'avatar-placeholder';
+                            placeholder.textContent = selectedWorker.fullName?.charAt(0).toUpperCase() || 'W';
+                            parent.appendChild(placeholder);
                           }
                         }}
                       />
                     ) : (
                       <div className="avatar-placeholder">
-                        {selectedWorker.fullName?.charAt(0).toUpperCase()}
+                        {selectedWorker.fullName?.charAt(0).toUpperCase() || 'W'}
                       </div>
                     )}
                   </div>
