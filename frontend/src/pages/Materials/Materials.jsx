@@ -1,6 +1,7 @@
 import React from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-
+// Add this import at the top of materialRoutes.js
+import expenseController from '../controllers/expenseController.js';
 const Materials = () => {
   return (
     <DashboardLayout userRole="site_manager">
