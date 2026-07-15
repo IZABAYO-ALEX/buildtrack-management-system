@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use relative path for Vercel (API is served from same domain)
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://buildtrack-management-system.onrender.com/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
