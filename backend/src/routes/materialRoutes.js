@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
-import materialController from '../controllers/materialController.js';
+import * as materialController from '../controllers/materialController.js';
 import * as expenseController from '../controllers/expenseController.js';
 
 const router = express.Router();
