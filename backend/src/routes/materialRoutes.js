@@ -5,21 +5,20 @@ import * as expenseController from '../controllers/expenseController.js';
 
 const router = express.Router();
 
+// All routes require authentication
 router.use(authenticate);
 
-// Route to reject an expense (using expenseController)
-router.post('/:id/reject', authenticate, authorize('contractor'), expenseController.rejectExpense);
+// Route to reject an expense
+router.post('/:id/reject', authorize('contractor'), expenseController.rejectExpense);
 
 // Material routes
-router.get('/', authenticate, materialController.getAll);
-router.get('/:id', authenticate, materialController.getOne);
-router.post('/', authenticate, authorize('contractor'), materialController.create);
-router.put('/:id', authenticate, authorize('contractor'), materialController.update);
-router.delete('/:id', authenticate, authorize('contractor'), materialController.delete);
+router.get('/', materialController.getAll);
+router.get('/:id', materialController.getOne);
 
-// Additional material creation route for site_manager and contractor
-router.post('/', authorize('site_manager', 'contractor'), (req, res) => {
-  res.json({ success: true, message: 'Material created' });
-});
+// ✅ Only ONE POST route - combined permissions
+router.post('/', authorize('contractor', 'site_manager'), materialController.create);
+
+router.put('/:id', authorize('contractor'), materialController.update);
+router.delete('/:id', authorize('contractor'), materialController.delete);
 
 export default router;
