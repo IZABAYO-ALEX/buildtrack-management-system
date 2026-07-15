@@ -19,6 +19,6 @@ router.get('/:id', materialController.getOne);
 router.post('/', authorize('contractor', 'site_manager'), materialController.create);
 
 router.put('/:id', authorize('contractor'), materialController.update);
-router.delete('/:id', authorize('contractor'), materialController.delete);
+router.delete('/:id', authenticate, authorize('contractor'), materialController.deleteMaterial);
 
 export default router;
