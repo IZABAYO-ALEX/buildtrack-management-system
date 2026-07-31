@@ -220,3 +220,25 @@ GET    /workers           - Get worker analytics
 GET    /materials         - Get material analytics
 GET    /productivity      - Get productivity analytics
 */
+/*/*NODE_ENV=production
+PORT=10000
+
+DB_HOST=
+DB_PORT=11964
+DB_USER=root
+DB_PASSWORD=KHuUqReNSSxKinmfyzzFEHRcPBTiCpTk
+DB_NAME=railway
+DB_SSL=true
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+JWT_SECRET=e85ac61778a50a5350b06ccb4c6444343afabb7dcf27b2b4d38f8640f90e1689fb153924efea517b64e3c429bf6d9b1a1f5c3a3787a87f267c0b6fe008a185ab
+
+JWT_EXPIRY=7d
+
+CORS_ORIGIN=https://buildtrack-management-system.vercel.app
+RATE_LIMIT_WINDOW=15
+RATE_LIMIT_MAX=100
+
+LOG_LEVEL=*/
