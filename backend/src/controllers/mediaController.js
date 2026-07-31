@@ -3,6 +3,7 @@ import Project from '../models/Project.js';
 import NotificationService from '../services/notificationService.js';
 import logger from '../utils/logger.js';
 import path from 'path';
+import { Op } from 'sequelize';
 
 export const uploadMedia = async (req, res) => {
   try {

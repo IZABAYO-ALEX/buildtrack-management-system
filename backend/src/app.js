@@ -1,5 +1,5 @@
 import express from "express";
-import cors from "cors";
+//import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import compression from "compression";
@@ -197,9 +197,13 @@ async function startServer() {
       logger.info(`🚀 BuildTrack API running on port ${PORT}`);
     });
   } catch (error) {
-    logger.error("❌ Failed to start server", error);
-    process.exit(1);
-  }
+  console.error("========== STARTUP ERROR ==========");
+  console.error(error);
+  console.error(error.stack);
+  console.error("===================================");
+
+  process.exit(1);
+}
 }
 
 startServer();

@@ -139,7 +139,7 @@ const Login = () => {
         
         if (newAttempts >= 5) {
           setIsLocked(true);
-          setLockTimer(60);
+          setLockTimer(5);
           setError('Too many failed attempts. Please wait 60 seconds.');
         } else {
           setError(result.error || 'Invalid email or password');
