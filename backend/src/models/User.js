@@ -52,16 +52,28 @@ const User = sequelize.define('User', {
     }
   },
   role: {
-    type: DataTypes.ENUM('contractor', 'site_manager', 'accountant'),
-    allowNull: false,
-    defaultValue: 'site_manager',
-    validate: {
-      isIn: {
-        args: [['contractor', 'site_manager', 'accountant']],
-        msg: 'Invalid role specified'
-      }
+  type: DataTypes.ENUM(
+    'admin',
+    'contractor',
+    'site_manager',
+    'accountant'
+  ),
+  allowNull: false,
+  defaultValue: 'site_manager',
+  validate: {
+    isIn: {
+      args: [
+        [
+          'admin',
+          'contractor',
+          'site_manager',
+          'accountant'
+        ]
+      ],
+      msg: 'Invalid role specified'
     }
-  },
+  }
+},
   phone: {
     type: DataTypes.STRING(20),
     allowNull: true,

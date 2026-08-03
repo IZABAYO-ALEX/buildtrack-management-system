@@ -1,4 +1,5 @@
 import express from 'express';
+
 import {
   getUsers,
   createUser,
@@ -8,19 +9,76 @@ import {
   activateUser,
   resetPassword
 } from '../controllers/userController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
+
+import {
+  authenticate,
+  authorize
+} from '../middleware/auth.js';
+
 
 const router = express.Router();
 
-router.use(authenticate);
-router.use(authorize(['contractor', 'accountant']));
 
-router.get('/', getUsers);
-router.post('/', createUser);
-router.patch('/:id/verify', verifyUser);
-router.delete('/:id', deleteUser);
-router.patch('/:id/deactivate', deactivateUser);
-router.patch('/:id/activate', activateUser);
-router.post('/:id/reset-password', resetPassword);
+// Every route requires login
+router.use(authenticate);
+
+
+// Only admin and contractor can access user management
+router.use(
+  authorize(
+    'admin',
+    'contractor'
+  )
+);
+
+
+// Get all users
+router.get(
+  '/',
+  getUsers
+);
+
+
+// Create users
+router.post(
+  '/',
+  createUser
+);
+
+
+// Verify users
+router.patch(
+  '/:id/verify',
+  verifyUser
+);
+
+
+// Delete users
+router.delete(
+  '/:id',
+  deleteUser
+);
+
+
+// Deactivate users
+router.patch(
+  '/:id/deactivate',
+  deactivateUser
+);
+
+
+// Activate users
+router.patch(
+  '/:id/activate',
+  activateUser
+);
+
+
+// Reset password
+router.post(
+  '/:id/reset-password',
+  resetPassword
+);
+
 
 export default router;

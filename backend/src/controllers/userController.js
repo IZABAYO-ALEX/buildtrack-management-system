@@ -19,50 +19,190 @@ export const getUsers = async (req, res) => {
 
 export const createUser = async (req, res) => {
   try {
-    const { email, password, fullName, role, phone, companyName } = req.body;
-    
+
+    const {
+      email,
+      password,
+      fullName,
+      role,
+      phone,
+      companyName
+    } = req.body;
+
+
+    // Validate email
     if (!email || !email.includes('@')) {
-      return res.status(400).json({ success: false, message: 'Valid email is required' });
+      return res.status(400).json({
+        success:false,
+        message:'Valid email is required'
+      });
     }
-    
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email already exists' });
+
+
+    // Validate role
+    const allowedRoles = [
+      'admin',
+      'contractor',
+      'site_manager',
+      'accountant'
+    ];
+
+
+    const selectedRole = role || 'site_manager';
+
+
+    if (!allowedRoles.includes(selectedRole)) {
+
+      return res.status(400).json({
+
+        success:false,
+
+        message:'Invalid role selected'
+
+      });
+
     }
+
+
+
+    /*
+      Permission rules:
+
+      Admin:
+      - Can create any user
+
+      Contractor:
+      - Can create contractor
+      - Can create site_manager
+      - Can create accountant
+      - Cannot create admin
+
+    */
+
+
+    if (
+      req.user.role === 'contractor' &&
+      selectedRole === 'admin'
+    ) {
+
+      return res.status(403).json({
+
+        success:false,
+
+        message:
+        'Contractors cannot create administrators'
+
+      });
+
+    }
+
+
+
+    // Check duplicate email
+
+    const existingUser = await User.findOne({
+      where:{
+        email:email.toLowerCase().trim()
+      }
+    });
+
+
+    if(existingUser){
+
+      return res.status(400).json({
+
+        success:false,
+
+        message:'Email already exists'
+
+      });
+
+    }
+
+
 
     const plainPassword = password || 'password123';
-    
+
+
+
     const user = await User.create({
-      email: email.toLowerCase().trim(),
-      passwordHash: plainPassword,
+
+      email:email.toLowerCase().trim(),
+
+      passwordHash:plainPassword,
+
       fullName,
-      role: role || 'site_manager',
-      phone: phone || '',
-      companyName: companyName || '',
-      isActive: true,
-      isVerified: false,
-      createdBy: req.user.id
+
+      role:selectedRole,
+
+      phone:phone || '',
+
+      companyName:companyName || '',
+
+      isActive:true,
+
+      isVerified:false,
+
+      createdBy:req.user.id
+
     });
 
-    console.log('✅ User created:', user.email, 'Role:', user.role);
+
+
+    logger.info(
+      `User created: ${user.email} by ${req.user.email}`
+    );
+
+
 
     res.status(201).json({
-      success: true,
-      data: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-        phone: user.phone,
-        companyName: user.companyName,
-        isActive: user.isActive,
-        isVerified: user.isVerified
+
+      success:true,
+
+      data:{
+
+        id:user.id,
+
+        email:user.email,
+
+        fullName:user.fullName,
+
+        role:user.role,
+
+        phone:user.phone,
+
+        companyName:user.companyName,
+
+        isActive:user.isActive,
+
+        isVerified:user.isVerified
+
       },
-      message: `User ${fullName} created successfully! Password: ${plainPassword}`
+
+
+      message:
+      `User ${fullName} created successfully!`
+
     });
-  } catch (error) {
-    console.error('Create user error:', error);
-    res.status(400).json({ success: false, message: error.message });
+
+
+
+  } catch(error){
+
+    logger.error(
+      'Create user error:',
+      error
+    );
+
+
+    res.status(400).json({
+
+      success:false,
+
+      message:error.message
+
+    });
+
   }
 };
 
