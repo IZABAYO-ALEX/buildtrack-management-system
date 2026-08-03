@@ -205,71 +205,47 @@ export const createUser = async (req, res) => {
 
   }
 };
-export const getProjectTeam = async (req,res)=>{
+export const getProjectTeam = async (req, res) => {
   try {
-
-    const contractors = await User.findAll({
-      where:{
-        role:'contractor',
-        isActive:true
-      },
-      attributes:[
-        'id',
-        'fullName',
-        'email'
-      ]
-    });
-
-
     const siteManagers = await User.findAll({
-      where:{
-        role:'site_manager',
-        isActive:true
+      where: {
+        role: "site_manager",
+        isActive: true
       },
-      attributes:[
-        'id',
-        'fullName',
-        'email'
+      attributes: [
+        "id",
+        "fullName",
+        "email"
       ]
     });
-
 
     const accountants = await User.findAll({
-      where:{
-        role:'accountant',
-        isActive:true
+      where: {
+        role: "accountant",
+        isActive: true
       },
-      attributes:[
-        'id',
-        'fullName',
-        'email'
+      attributes: [
+        "id",
+        "fullName",
+        "email"
       ]
     });
 
-
-    res.json({
-
-      success:true,
-
-      data:{
-        contractors,
+    res.status(200).json({
+      success: true,
+      data: {
         siteManagers,
         accountants
       }
-
     });
 
-
-  } catch(error){
+  } catch (error) {
+    logger.error("Get project team error:", error);
 
     res.status(500).json({
-
-      success:false,
-
-      message:error.message
-
+      success: false,
+      message: "Failed to fetch project team"
     });
-
   }
 };
 

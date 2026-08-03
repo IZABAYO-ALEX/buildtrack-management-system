@@ -330,7 +330,7 @@ setTeam(
 />
 
         {/* Edit Project Modal */}
-        <<ProjectForm
+    <ProjectForm
   isOpen={showEditModal}
   onClose={() => {
     setShowEditModal(false);

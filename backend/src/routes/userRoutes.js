@@ -7,7 +7,8 @@ import {
   deleteUser,
   deactivateUser,
   activateUser,
-  resetPassword
+  resetPassword,
+  getProjectTeam
 } from '../controllers/userController.js';
 
 import {
