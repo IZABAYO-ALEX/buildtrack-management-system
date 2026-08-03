@@ -83,7 +83,7 @@ const Request = sequelize.define('Request', {
   tableName: 'requests',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
   deletedAt: 'deleted_at',
 paranoid: true,
 });
