@@ -205,6 +205,73 @@ export const createUser = async (req, res) => {
 
   }
 };
+export const getProjectTeam = async (req,res)=>{
+  try {
+
+    const contractors = await User.findAll({
+      where:{
+        role:'contractor',
+        isActive:true
+      },
+      attributes:[
+        'id',
+        'fullName',
+        'email'
+      ]
+    });
+
+
+    const siteManagers = await User.findAll({
+      where:{
+        role:'site_manager',
+        isActive:true
+      },
+      attributes:[
+        'id',
+        'fullName',
+        'email'
+      ]
+    });
+
+
+    const accountants = await User.findAll({
+      where:{
+        role:'accountant',
+        isActive:true
+      },
+      attributes:[
+        'id',
+        'fullName',
+        'email'
+      ]
+    });
+
+
+    res.json({
+
+      success:true,
+
+      data:{
+        contractors,
+        siteManagers,
+        accountants
+      }
+
+    });
+
+
+  } catch(error){
+
+    res.status(500).json({
+
+      success:false,
+
+      message:error.message
+
+    });
+
+  }
+};
 
 export const verifyUser = async (req, res) => {
   try {

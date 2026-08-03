@@ -16,7 +16,11 @@ import './Projects.css';
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [team, setTeam] = useState({
+  contractors: [],
+  siteManagers: [],
+  accountants: []
+});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -32,12 +36,24 @@ const Projects = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [projectsRes, usersRes] = await Promise.all([
-        projectService.getAll(),
-        api.get('/users')
-      ]);
-      setProjects(projectsRes.data.data || []);
-      setUsers(usersRes.data.data || []);
+      const [projectsRes, teamRes] = await Promise.all([
+  projectService.getAll(),
+  api.get('/users/team')
+]);
+
+
+setProjects(
+  projectsRes.data.data || []
+);
+
+
+setTeam(
+  teamRes.data.data || {
+    contractors: [],
+    siteManagers: [],
+    accountants: []
+  }
+);
     } catch (error) {
       toast.error('Failed to fetch data');
       console.error(error);
@@ -302,34 +318,32 @@ const Projects = () => {
 
         {/* Create Project Modal */}
         <ProjectForm
-          isOpen={showCreateModal}
-          onClose={() => {
-  setShowCreateModal(false);
-}}
-          onSuccess={() => {
-  setShowCreateModal(false);
-  fetchData();
-}}
-          users={users}
-        />
+  isOpen={showCreateModal}
+  onClose={() => {
+    setShowCreateModal(false);
+  }}
+  onSuccess={() => {
+    setShowCreateModal(false);
+    fetchData();
+  }}
+  team={team}
+/>
 
         {/* Edit Project Modal */}
-        <ProjectForm
-          isOpen={showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedProject(null);
-            resetForm();
-          }}
-          onSuccess={() => {
-            setShowEditModal(false);
-            setSelectedProject(null);
-            resetForm();
-            fetchData();
-          }}
-          project={selectedProject}
-          users={users}
-        />
+        <<ProjectForm
+  isOpen={showEditModal}
+  onClose={() => {
+    setShowEditModal(false);
+    setSelectedProject(null);
+  }}
+  onSuccess={() => {
+    setShowEditModal(false);
+    setSelectedProject(null);
+    fetchData();
+  }}
+  project={selectedProject}
+  team={team}
+/>
 
         {/* View Project Modal */}
         {showViewModal && selectedProject && (
