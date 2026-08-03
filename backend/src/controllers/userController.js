@@ -212,11 +212,7 @@ export const getProjectTeam = async (req, res) => {
         role: "site_manager",
         isActive: true
       },
-      attributes: [
-        "id",
-        "fullName",
-        "email"
-      ]
+      attributes: ["id", "fullName", "email"]
     });
 
     const accountants = await User.findAll({
@@ -224,31 +220,23 @@ export const getProjectTeam = async (req, res) => {
         role: "accountant",
         isActive: true
       },
-      attributes: [
-        "id",
-        "fullName",
-        "email"
-      ]
+      attributes: ["id", "fullName", "email"]
     });
 
-    res.status(200).json({
+    res.json({
       success: true,
       data: {
         siteManagers,
         accountants
       }
     });
-
   } catch (error) {
-    logger.error("Get project team error:", error);
-
     res.status(500).json({
       success: false,
-      message: "Failed to fetch project team"
+      message: error.message
     });
   }
 };
-
 export const verifyUser = async (req, res) => {
   try {
     const { id } = req.params;

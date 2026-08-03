@@ -1,127 +1,267 @@
 // frontend/src/pages/Projects/Projects.jsx
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Plus, Search, Edit, Trash2, Eye, 
-  Archive, CheckCircle, Clock, AlertCircle,
-  Calendar, MapPin, DollarSign, Users, 
-  RefreshCw, Building2, FileText, Filter,
-  Tag, Activity, BarChart3, X
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
+  Archive,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Calendar,
+  MapPin,
+  DollarSign,
+  Users,
+  RefreshCw,
+  Building2,
+  Activity,
+  X
 } from 'lucide-react';
+
 import toast from 'react-hot-toast';
+
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import ProjectForm from '../../components/common/ProjectForm';
+
 import api, { projectService } from '../../services/api';
+
 import './Projects.css';
 
+
 const Projects = () => {
+
+
   const [projects, setProjects] = useState([]);
+
+
   const [team, setTeam] = useState({
-  contractors: [],
-  siteManagers: [],
-  accountants: []
-});
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [projectsRes, teamRes] = await Promise.all([
-  projectService.getAll(),
-  api.get('/users/team')
-]);
-
-
-setProjects(
-  projectsRes.data.data || []
-);
-
-
-setTeam(
-  teamRes.data.data || {
-    contractors: [],
     siteManagers: [],
     accountants: []
-  }
-);
-    } catch (error) {
-      toast.error('Failed to fetch data');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('⚠️ Are you sure you want to delete this project?')) return;
-    try {
-      await projectService.delete(id);
-      setProjects(projects.filter(p => p.id !== id));
-      toast.success('Project deleted successfully!');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete project');
-    }
-  };
-
-  const handleArchive = async (id) => {
-    try {
-      await projectService.archive(id);
-      toast.success('Project archived successfully!');
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to archive project');
-    }
-  };
-
-  const getStatusColor = (status) => {
-    const colors = {
-      planning: 'warning',
-      active: 'success',
-      on_hold: 'danger',
-      completed: 'info',
-      cancelled: 'secondary'
-    };
-    return colors[status] || 'secondary';
-  };
-
-  const getStatusIcon = (status) => {
-    const icons = {
-      planning: <Clock size={14} />,
-      active: <CheckCircle size={14} />,
-      on_hold: <AlertCircle size={14} />,
-      completed: <CheckCircle size={14} />,
-      cancelled: <X size={14} />
-    };
-    return icons[status] || null;
-  };
-
-  const getPriorityColor = (priority) => {
-    const colors = {
-      low: 'info',
-      medium: 'warning',
-      high: 'danger',
-      critical: 'danger critical'
-    };
-    return colors[priority] || 'secondary';
-  };
-
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          project.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          project.projectCode?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
   });
+
+
+  const [loading, setLoading] = useState(true);
+
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+
+  const [statusFilter, setStatusFilter] = useState('all');
+
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+
+  const [showEditModal, setShowEditModal] = useState(false);
+
+
+  const [showViewModal, setShowViewModal] = useState(false);
+
+
+  const [selectedProject, setSelectedProject] = useState(null);
+
+
+
+  // ================================
+  // LOAD PROJECTS + TEAM MEMBERS
+  // ================================
+
+// ================================
+// LOAD PROJECTS + TEAM MEMBERS
+// ================================
+
+const fetchData = async () => {
+
+  try {
+
+    setLoading(true);
+
+
+    const [
+      projectsResponse,
+      teamResponse
+    ] = await Promise.all([
+
+      projectService.getAll(),
+
+      api.get("/users/team")
+
+    ]);
+
+
+
+    setProjects(
+      projectsResponse.data.data || []
+    );
+
+
+
+    setTeam({
+
+      siteManagers:
+        teamResponse.data.data?.siteManagers || [],
+
+
+      accountants:
+        teamResponse.data.data?.accountants || []
+
+    });
+
+
+
+  } catch(error) {
+
+
+    console.error(
+      "Fetch projects/team error:",
+      error
+    );
+
+
+    toast.error(
+      error.response?.data?.message ||
+      "Failed to load projects data"
+    );
+
+
+  } finally {
+
+    setLoading(false);
+
+  }
+
+};
+
+
+
+
+  // ================================
+  // ARCHIVE PROJECT
+  // ================================
+
+
+  const handleArchive = async(id)=>{
+
+
+    try{
+
+
+      await projectService.archive(id);
+
+
+
+      toast.success(
+        "Project archived"
+      );
+
+
+      fetchData();
+
+
+
+    }catch(error){
+
+
+      toast.error(
+        error.response?.data?.message ||
+        "Failed to archive project"
+      );
+
+
+    }
+
+
+  };
+
+
+
+
+
+  const getStatusColor=(status)=>{
+
+
+    const colors={
+
+      planning:"warning",
+      active:"success",
+      on_hold:"danger",
+      completed:"info",
+      cancelled:"secondary"
+
+    };
+
+
+    return colors[status] || "secondary";
+
+  };
+
+
+
+
+
+  const getStatusIcon=(status)=>{
+
+
+    const icons={
+
+      planning:<Clock size={14}/>,
+      active:<CheckCircle size={14}/>,
+      on_hold:<AlertCircle size={14}/>,
+      completed:<CheckCircle size={14}/>,
+      cancelled:<X size={14}/>
+
+    };
+
+
+    return icons[status] || null;
+
+  };
+
+
+
+
+
+  const filteredProjects =
+    projects.filter(project=>{
+
+
+      const search =
+        searchTerm.toLowerCase();
+
+
+
+      const matchesSearch =
+
+        project.name
+        ?.toLowerCase()
+        .includes(search)
+
+        ||
+
+        project.clientName
+        ?.toLowerCase()
+        .includes(search);
+
+
+
+      const matchesStatus =
+
+        statusFilter==="all"
+
+        ||
+
+        project.status===statusFilter;
+
+
+
+      return matchesSearch && matchesStatus;
+
+
+    });
 
   return (
     <DashboardLayout userRole="contractor">
@@ -317,16 +457,21 @@ setTeam(
         )}
 
         {/* Create Project Modal */}
-        <ProjectForm
-  isOpen={showCreateModal}
-  onClose={() => {
-    setShowCreateModal(false);
-  }}
-  onSuccess={() => {
-    setShowCreateModal(false);
-    fetchData();
-  }}
-  team={team}
+       <ProjectForm
+
+ isOpen={showCreateModal}
+
+ onClose={()=>{
+   setShowCreateModal(false);
+ }}
+
+ onSuccess={()=>{
+   setShowCreateModal(false);
+   fetchData();
+ }}
+
+ team={team}
+
 />
 
         {/* Edit Project Modal */}

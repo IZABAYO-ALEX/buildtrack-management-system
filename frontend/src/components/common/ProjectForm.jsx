@@ -621,61 +621,73 @@ const ProjectForm = ({
     );
   };
 
-  const renderProjectTeam = () => {
-    return (
-      <div className="tab-content">
-        <div className="form-row">
-          <div className="form-group">
-            <label>Site Manager <span className="required">*</span></label>
-            <select
-              value={formData.siteManagerId}
-              onChange={(e) => setFormData({ ...formData, siteManagerId: e.target.value })}
-              className={errors.siteManagerId ? 'error' : ''}
-              required
-            >
-              <option value="">Select Site Manager</option>
-{(team.siteManagers || []).map(u => (
-  <option key={u.id} value={u.id}>
-    {u.fullName} ({u.email})
-  </option>
-))}
-</select>
+const renderProjectTeam = () => {
+  return (
+    <div className="tab-content">
+      <div className="form-row">
 
-  {renderFieldError('accountantId')}
-</div>
-</div>
-</div>
-);
+        {/* Site Manager */}
+        <div className="form-group">
+          <label>
+            Site Manager <span className="required">*</span>
+          </label>
+
+          <select
+            value={formData.siteManagerId}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                siteManagerId: e.target.value
+              })
+            }
+            className={errors.siteManagerId ? "error" : ""}
+            required
+          >
+            <option value="">Select Site Manager</option>
+
+            {(team?.siteManagers || []).map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.fullName} ({u.email})
+              </option>
+            ))}
+          </select>
+
+          {renderFieldError("siteManagerId")}
+        </div>
+
+        {/* Accountant */}
+        <div className="form-group">
+          <label>
+            Accountant <span className="required">*</span>
+          </label>
+
+          <select
+            value={formData.accountantId}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                accountantId: e.target.value
+              })
+            }
+            className={errors.accountantId ? "error" : ""}
+            required
+          >
+            <option value="">Select Accountant</option>
+
+            {(team?.accountants || []).map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.fullName} ({u.email})
+              </option>
+            ))}
+          </select>
+
+          {renderFieldError("accountantId")}
+        </div>
+
+      </div>
+    </div>
+  );
 };
-
-<div className="form-group">
-  <label>
-    Accountant <span className="required">*</span>
-  </label>
-
-  <select
-    value={formData.accountantId}
-    onChange={(e) =>
-      setFormData({
-        ...formData,
-        accountantId: e.target.value
-      })
-    }
-    className={errors.accountantId ? 'error' : ''}
-    required
-  >
-    <option value="">Select Accountant</option>
-
-    {(team.accountants || []).map(u => (
-      <option key={u.id} value={u.id}>
-        {u.fullName} ({u.email})
-      </option>
-    ))}
-
-  </select>
-
-  {renderFieldError('accountantId')}
-</div>
   const renderAdvanced = () => {
     return (
       <div className="tab-content">

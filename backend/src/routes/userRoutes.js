@@ -21,17 +21,16 @@ const router = express.Router();
 
 
 // Every route requires login
-router.use(authenticate);
-
-
-// Only admin and contractor can access user management
-router.use(
+// Get team members for project assignment
+router.get(
+  "/team",
+  authenticate,
   authorize(
     'admin',
     'contractor'
-  )
+  ),
+  getProjectTeam
 );
-
 
 // Get all users
 router.get(
@@ -80,11 +79,7 @@ router.post(
   '/:id/reset-password',
   resetPassword
 );
-router.get(
-  '/team',
-  authenticate,
-  getProjectTeam
-);
+router.get("/team", getProjectTeam);
 
 
 export default router;

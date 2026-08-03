@@ -80,7 +80,9 @@ const corsOptions = {
     "Authorization",
     "X-Requested-With",
     "Accept",
-    "X-Refresh-Token"
+    "X-Refresh-Token",
+    "Cache-Control",
+    "Pragma"
   ],
 
   exposedHeaders: [
