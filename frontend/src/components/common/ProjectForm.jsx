@@ -11,7 +11,13 @@ import toast from 'react-hot-toast';
 import api from '../../services/api';
 import './ProjectForm.css';
 
-const ProjectForm = ({ isOpen, onClose, onSuccess, project = null, users = [] }) => {
+const ProjectForm = ({
+ isOpen,
+ onClose,
+ onSuccess,
+ project = null,
+ team = {}
+}) => {
   const [formData, setFormData] = useState({
     name: '',
     clientName: '',
@@ -417,6 +423,7 @@ const ProjectForm = ({ isOpen, onClose, onSuccess, project = null, users = [] })
                 onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                 placeholder="Enter budget"
                 required
+                thousandSeparator=","
                 min="0"
                 step="1000"
                 className={errors.budget ? 'error' : ''}
@@ -627,36 +634,48 @@ const ProjectForm = ({ isOpen, onClose, onSuccess, project = null, users = [] })
               required
             >
               <option value="">Select Site Manager</option>
-              {users.filter(u => u.role === 'site_manager').map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.fullName} ({u.email})
-                </option>
-              ))}
-            </select>
-            {renderFieldError('siteManagerId')}
-          </div>
-          <div className="form-group">
-            <label>Accountant <span className="required">*</span></label>
-            <select
-              value={formData.accountantId}
-              onChange={(e) => setFormData({ ...formData, accountantId: e.target.value })}
-              className={errors.accountantId ? 'error' : ''}
-              required
-            >
-              <option value="">Select Accountant</option>
-              {users.filter(u => u.role === 'accountant').map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.fullName} ({u.email})
-                </option>
-              ))}
-            </select>
-            {renderFieldError('accountantId')}
-          </div>
-        </div>
-      </div>
-    );
-  };
+{(team.siteManagers || []).map(u => (
+  <option key={u.id} value={u.id}>
+    {u.fullName} ({u.email})
+  </option>
+))}
+</select>
 
+  {renderFieldError('accountantId')}
+</div>
+</div>
+</div>
+);
+};
+
+<div className="form-group">
+  <label>
+    Accountant <span className="required">*</span>
+  </label>
+
+  <select
+    value={formData.accountantId}
+    onChange={(e) =>
+      setFormData({
+        ...formData,
+        accountantId: e.target.value
+      })
+    }
+    className={errors.accountantId ? 'error' : ''}
+    required
+  >
+    <option value="">Select Accountant</option>
+
+    {(team.accountants || []).map(u => (
+      <option key={u.id} value={u.id}>
+        {u.fullName} ({u.email})
+      </option>
+    ))}
+
+  </select>
+
+  {renderFieldError('accountantId')}
+</div>
   const renderAdvanced = () => {
     return (
       <div className="tab-content">
