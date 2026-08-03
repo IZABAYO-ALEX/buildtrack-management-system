@@ -7,6 +7,7 @@ import Audit from '../models/Audit.js';
 import { Op } from 'sequelize';
 import logger from '../utils/logger.js';
 
+
 const generateProjectCode = () => {
   const prefix = 'PRJ';
   const date = new Date();
@@ -15,9 +16,44 @@ const generateProjectCode = () => {
   const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
   return `${prefix}-${year}${month}-${random}`;
 };
+const canViewProject = (user, project) => {
+  switch (user.role) {
+    case 'admin':
+      return true;
+
+    case 'contractor':
+      return project.contractorId === user.id;
+
+    case 'site_manager':
+      return project.siteManagerId === user.id;
+
+    case 'accountant':
+      return project.accountantId === user.id;
+
+    default:
+      return false;
+  }
+};
+
+const canManageProject = (user, project) => {
+  switch (user.role) {
+    case 'admin':
+      return true;
+
+    case 'contractor':
+      return project.contractorId === user.id;
+
+    case 'site_manager':
+      return project.siteManagerId === user.id;
+
+    default:
+      return false;
+  }
+};
 
 export const createProject = async (req, res) => {
   try {
+
     const {
       name,
       clientName,
@@ -38,6 +74,7 @@ export const createProject = async (req, res) => {
       numberOfUnits,
       numberOfFloors,
       completionDate,
+      contractorId,
       siteManagerId,
       accountantId,
       tags,
@@ -45,311 +82,1090 @@ export const createProject = async (req, res) => {
       notes
     } = req.body;
 
-    if (!name || name.length < 3) {
+    if (!name || name.trim().length < 3) {
       return res.status(400).json({
         success: false,
         message: 'Project name must be at least 3 characters'
       });
     }
 
-    if (!budget || budget <= 0) {
+    if (!budget || Number(budget) <= 0) {
       return res.status(400).json({
         success: false,
         message: 'Valid budget is required'
       });
     }
 
+    let assignedContractorId;
+
+    if (req.user.role === 'contractor') {
+      assignedContractorId = req.user.id;
+    } else if (req.user.role === 'admin') {
+
+      if (!contractorId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a contractor'
+        });
+      }
+
+      assignedContractorId = contractorId;
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not allowed to create projects'
+      });
+    }
+
+    const contractor = await User.findOne({
+      where: {
+        id: assignedContractorId,
+        role: 'contractor',
+        isActive: true
+      }
+    });
+
+    if (!contractor) {
+      return res.status(400).json({
+        success: false,
+        message: 'Selected contractor does not exist'
+      });
+    }
+
+    if (siteManagerId) {
+      const manager = await User.findOne({
+        where: {
+          id: siteManagerId,
+          role: 'site_manager',
+          isActive: true
+        }
+      });
+
+      if (!manager) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid Site Manager selected'
+        });
+      }
+    }
+
+    if (accountantId) {
+      const accountant = await User.findOne({
+        where: {
+          id: accountantId,
+          role: 'accountant',
+          isActive: true
+        }
+      });
+
+      if (!accountant) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid Accountant selected'
+        });
+      }
+    }
+
     const projectCode = generateProjectCode();
 
     const project = await Project.create({
-      name,
+
+      name: name.trim(),
+
       projectCode,
+
       clientName,
+
       clientEmail,
+
       clientPhone,
+
       description,
+
       location,
+
       budget,
+
       contractValue: contractValue || budget,
+
       currency: currency || 'UGX',
+
       startDate,
+
       endDate,
+
       status: status || 'planning',
+
       priority: priority || 'medium',
+
       category,
+
       projectType,
+
       siteArea,
+
       numberOfUnits,
+
       numberOfFloors,
+
       completionDate,
-      contractorId: req.user.id,
-      siteManagerId,
-      accountantId,
+
+      contractorId: assignedContractorId,
+
+      siteManagerId: siteManagerId || null,
+
+      accountantId: accountantId || null,
+
+      createdBy: req.user.id,
+
       tags: tags || [],
+
       riskLevel: riskLevel || 'medium',
+
       notes,
+
       progress: 0,
+
       completionPercentage: 0,
+
       actualCost: 0,
+
       isArchived: false
+
     });
 
     await Audit.create({
       userId: req.user.id,
       action: 'CREATE_PROJECT',
-      details: { projectId: project.id, name: project.name, code: project.projectCode },
+      details: {
+        projectId: project.id,
+        projectCode,
+        projectName: project.name
+      },
       affectedRecord: project.id
     });
 
     res.status(201).json({
       success: true,
       data: project,
-      message: `Project "${name}" created successfully! Code: ${projectCode}`
+      message: `Project "${project.name}" created successfully.`
     });
+
   } catch (error) {
+
     logger.error('Create project error:', error);
-    res.status(400).json({ success: false, message: error.message });
+
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+
   }
 };
 
 export const getProjects = async (req, res) => {
   try {
-    const { status, search, includeArchived, page = 1, limit = 20 } = req.query;
-    const where = {};
-    if(req.user.role === 'contractor'){
-    where.contractorId = req.user.id;
-}
 
-    if (status) where.status = status;
-    if (!includeArchived) where.isArchived = false;
+    const {
+      status,
+      search,
+      includeArchived,
+      page = 1,
+      limit = 20
+    } = req.query;
+
+    const where = {};
+
+    /*
+      Visibility Rules
+
+      Admin          -> All projects
+      Contractor     -> Own projects
+      Site Manager   -> Assigned projects
+      Accountant     -> Assigned projects
+    */
+
+    switch (req.user.role) {
+
+      case 'contractor':
+        where.contractorId = req.user.id;
+        break;
+
+      case 'site_manager':
+        where.siteManagerId = req.user.id;
+        break;
+
+      case 'accountant':
+        where.accountantId = req.user.id;
+        break;
+
+      case 'admin':
+      default:
+        // Admin sees all projects
+        break;
+    }
+
+    // Filter by status
+
+    if (status) {
+      where.status = status;
+    }
+
+    // Exclude archived unless requested
+
+    if (!includeArchived || includeArchived === 'false') {
+      where.isArchived = false;
+    }
+
+    // Search
+
     if (search) {
+
       where[Op.or] = [
-        { name: { [Op.like]: `%${search}%` } },
-        { projectCode: { [Op.like]: `%${search}%` } },
-        { clientName: { [Op.like]: `%${search}%` } }
+
+        {
+          name: {
+            [Op.like]: `%${search}%`
+          }
+        },
+
+        {
+          projectCode: {
+            [Op.like]: `%${search}%`
+          }
+        },
+
+        {
+          clientName: {
+            [Op.like]: `%${search}%`
+          }
+        }
+
       ];
     }
 
-    const offset = (page - 1) * limit;
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+
+    const offset = (pageNumber - 1) * pageSize;
 
     const projects = await Project.findAll({
+
       where,
+
       include: [
-        { 
-          model: Expense, 
-          as: 'expenses', 
+
+        {
+          model: Expense,
+          as: 'expenses',
           attributes: ['id', 'amount'],
           required: false
         },
-        { 
-          model: Worker, 
-          as: 'workers', 
+
+        {
+          model: Worker,
+          as: 'workers',
           attributes: ['id'],
           required: false
         },
+
         {
           model: User,
           as: 'contractor',
-          attributes: ['id', 'fullName', 'email'],
+          attributes: [
+            'id',
+            'fullName',
+            'email'
+          ],
           required: false
         },
+
         {
           model: User,
           as: 'siteManager',
-          attributes: ['id', 'fullName', 'email'],
+          attributes: [
+            'id',
+            'fullName',
+            'email'
+          ],
           required: false
         },
+
         {
           model: User,
           as: 'accountant',
-          attributes: ['id', 'fullName', 'email'],
+          attributes: [
+            'id',
+            'fullName',
+            'email'
+          ],
           required: false
         }
+
       ],
-      order: [['created_at', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+
+      order: [
+        ['created_at', 'DESC']
+      ],
+
+      limit: pageSize,
+
+      offset
+
     });
 
-    const total = await Project.count({ where });
+    const total = await Project.count({
+      where
+    });
 
-    const projectsWithMetrics = projects.map(project => {
-      const totalExpenses = project.expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
-      const remainingBudget = project.budget - totalExpenses;
-      const budgetUtilization = project.budget > 0 ? (totalExpenses / project.budget) * 100 : 0;
+    const data = projects.map(project => {
+
+      const totalExpenses =
+        project.expenses?.reduce(
+          (sum, expense) =>
+            sum + parseFloat(expense.amount),
+          0
+        ) || 0;
+
+      const remainingBudget =
+        Number(project.budget) - totalExpenses;
+
+      const budgetUtilization =
+        Number(project.budget) > 0
+          ? (totalExpenses / Number(project.budget)) * 100
+          : 0;
 
       return {
+
         ...project.toJSON(),
+
         totalExpenses,
+
         remainingBudget,
+
         budgetUtilization,
-        workerCount: project.workers?.length || 0
+
+        workerCount:
+          project.workers?.length || 0
+
       };
+
     });
 
     res.json({
+
       success: true,
-      data: projectsWithMetrics,
+
+      data,
+
       pagination: {
+
         total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / limit)
+
+        page: pageNumber,
+
+        limit: pageSize,
+
+        pages: Math.ceil(total / pageSize)
+
       }
+
     });
+
   } catch (error) {
-    logger.error('Get projects error:', error);
-    res.status(400).json({ success: false, message: error.message });
+
+    logger.error(
+      'Get projects error:',
+      error
+    );
+
+    res.status(400).json({
+
+      success: false,
+
+      message: error.message
+
+    });
+
   }
 };
 
 export const getProjectById = async (req, res) => {
   try {
+
     const project = await Project.findByPk(req.params.id, {
+
       include: [
-        { 
-          model: Expense, 
-          as: 'expenses', 
-          attributes: ['id', 'amount', 'category', 'description', 'date'],
+
+        {
+          model: Expense,
+          as: 'expenses',
+          attributes: [
+            'id',
+            'amount',
+            'category',
+            'description',
+            'date'
+          ],
           required: false
         },
-        { 
-          model: Worker, 
-          as: 'workers', 
-          attributes: ['id', 'fullName', 'role'],
+
+        {
+          model: Worker,
+          as: 'workers',
+          attributes: [
+            'id',
+            'fullName',
+            'role'
+          ],
           required: false
         },
+
+        {
+          model: User,
+          as: 'contractor',
+          attributes: [
+            'id',
+            'fullName',
+            'email'
+          ],
+          required: false
+        },
+
         {
           model: User,
           as: 'siteManager',
-          attributes: ['id', 'fullName', 'email'],
+          attributes: [
+            'id',
+            'fullName',
+            'email'
+          ],
           required: false
         },
+
         {
           model: User,
           as: 'accountant',
-          attributes: ['id', 'fullName', 'email'],
+          attributes: [
+            'id',
+            'fullName',
+            'email'
+          ],
           required: false
         }
+
       ]
+
     });
 
     if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
     }
 
-    const totalExpenses = project.expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
-    const remainingBudget = project.budget - totalExpenses;
-    const budgetUtilization = project.budget > 0 ? (totalExpenses / project.budget) * 100 : 0;
+    /*
+      Permission Check
+    */
+
+    if (!canViewProject(req.user, project)) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to view this project'
+      });
+    }
+
+    const totalExpenses =
+      project.expenses?.reduce(
+        (sum, expense) => sum + parseFloat(expense.amount),
+        0
+      ) || 0;
+
+    const remainingBudget =
+      Number(project.budget) - totalExpenses;
+
+    const budgetUtilization =
+      Number(project.budget) > 0
+        ? (totalExpenses / Number(project.budget)) * 100
+        : 0;
 
     res.json({
+
       success: true,
+
       data: {
+
         ...project.toJSON(),
+
         totalExpenses,
+
         remainingBudget,
+
         budgetUtilization,
-        workerCount: project.workers?.length || 0
+
+        workerCount:
+          project.workers?.length || 0
+
       }
+
     });
+
   } catch (error) {
-    logger.error('Get project error:', error);
-    res.status(400).json({ success: false, message: error.message });
+
+    logger.error(
+      'Get project error:',
+      error
+    );
+
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+
   }
 };
 
 export const updateProject = async (req, res) => {
   try {
+
     const project = await Project.findByPk(req.params.id);
+
     if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
+    }
+
+    /*
+      Permission Rules
+
+      Admin          -> Any project
+      Contractor     -> Own projects only
+      Site Manager   -> Assigned projects only
+      Accountant     -> No permission
+    */
+
+    if (!canManageProject(req.user, project)) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to update this project'
+      });
+    }
+
+    /*
+      Prevent changing ownership fields.
+
+      Only Admin can reassign these.
+    */
+
+    if (req.user.role !== 'admin') {
+
+      delete req.body.contractorId;
+      delete req.body.siteManagerId;
+      delete req.body.accountantId;
+
+    }
+
+    /*
+      If admin changes assignments,
+      verify the users exist.
+    */
+
+    if (req.user.role === 'admin') {
+
+      if (req.body.contractorId) {
+
+        const contractor = await User.findOne({
+          where: {
+            id: req.body.contractorId,
+            role: 'contractor',
+            isActive: true
+          }
+        });
+
+        if (!contractor) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid contractor selected'
+          });
+        }
+      }
+
+      if (req.body.siteManagerId) {
+
+        const manager = await User.findOne({
+          where: {
+            id: req.body.siteManagerId,
+            role: 'site_manager',
+            isActive: true
+          }
+        });
+
+        if (!manager) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid Site Manager selected'
+          });
+        }
+      }
+
+      if (req.body.accountantId) {
+
+        const accountant = await User.findOne({
+          where: {
+            id: req.body.accountantId,
+            role: 'accountant',
+            isActive: true
+          }
+        });
+
+        if (!accountant) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid Accountant selected'
+          });
+        }
+      }
+
     }
 
     await project.update(req.body);
 
     await Audit.create({
+
       userId: req.user.id,
+
       action: 'UPDATE_PROJECT',
-      details: { projectId: project.id, changes: req.body },
+
+      details: {
+        projectId: project.id,
+        changes: req.body
+      },
+
       affectedRecord: project.id
+
     });
 
-    res.json({ success: true, data: project, message: 'Project updated successfully' });
+    res.json({
+
+      success: true,
+
+      data: project,
+
+      message: 'Project updated successfully'
+
+    });
+
   } catch (error) {
+
     logger.error('Update project error:', error);
-    res.status(400).json({ success: false, message: error.message });
+
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+
   }
 };
 
 export const deleteProject = async (req, res) => {
   try {
+
     const project = await Project.findByPk(req.params.id);
+
     if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
+    }
+
+    /*
+      Permission Rules
+
+      Admin -> Any project
+
+      Contractor -> Own project only
+
+      Site Manager -> Not allowed
+
+      Accountant -> Not allowed
+    */
+
+    if (req.user.role === 'site_manager' || req.user.role === 'accountant') {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not allowed to delete projects'
+      });
+    }
+
+    if (
+      req.user.role === 'contractor' &&
+      project.contractorId !== req.user.id
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own projects'
+      });
+    }
+
+    /*
+      Prevent deleting active projects
+    */
+
+    if (project.status === 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'Archive the project before deleting it.'
+      });
     }
 
     await project.destroy();
 
     await Audit.create({
+
       userId: req.user.id,
+
       action: 'DELETE_PROJECT',
-      details: { projectId: project.id, name: project.name },
+
+      details: {
+
+        projectId: project.id,
+
+        projectName: project.name,
+
+        projectCode: project.projectCode,
+
+        performedBy: req.user.email
+
+      },
+
       affectedRecord: project.id
+
     });
 
-    res.json({ success: true, message: 'Project deleted successfully' });
+    res.json({
+
+      success: true,
+
+      message: 'Project moved to recycle bin successfully.'
+
+    });
+
   } catch (error) {
+
     logger.error('Delete project error:', error);
-    res.status(400).json({ success: false, message: error.message });
+
+    res.status(400).json({
+
+      success: false,
+
+      message: error.message
+
+    });
+
   }
 };
 
 export const archiveProject = async (req, res) => {
   try {
+
     const project = await Project.findByPk(req.params.id);
+
     if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
     }
 
+
+    /*
+      Permission Rules
+
+      Admin:
+      - Can archive any project
+
+      Contractor:
+      - Can archive only own projects
+
+      Site Manager:
+      - Cannot archive
+
+      Accountant:
+      - Cannot archive
+    */
+
+
+    if (
+      req.user.role === 'site_manager' ||
+      req.user.role === 'accountant'
+    ) {
+
+      return res.status(403).json({
+        success: false,
+        message: 'You are not allowed to archive projects'
+      });
+
+    }
+
+
+    if (
+      req.user.role === 'contractor' &&
+      project.contractorId !== req.user.id
+    ) {
+
+      return res.status(403).json({
+        success: false,
+        message: 'You can only archive your own projects'
+      });
+
+    }
+
+
+
+    /*
+      Prevent duplicate archive action
+    */
+
+    if (project.isArchived) {
+
+      return res.status(400).json({
+        success: false,
+        message: 'Project is already archived'
+      });
+
+    }
+
+
+
     project.isArchived = true;
+
     await project.save();
 
+
+
     await Audit.create({
+
       userId: req.user.id,
+
       action: 'ARCHIVE_PROJECT',
-      details: { projectId: project.id, name: project.name },
+
+      details: {
+
+        projectId: project.id,
+
+        projectName: project.name,
+
+        projectCode: project.projectCode,
+
+        performedBy: req.user.email
+
+      },
+
       affectedRecord: project.id
+
     });
 
-    res.json({ success: true, message: 'Project archived successfully' });
+
+
+    res.json({
+
+      success: true,
+
+      message: 'Project archived successfully'
+
+    });
+
+
+
   } catch (error) {
-    logger.error('Archive project error:', error);
-    res.status(400).json({ success: false, message: error.message });
+
+    logger.error(
+      'Archive project error:',
+      error
+    );
+
+
+    res.status(400).json({
+
+      success: false,
+
+      message: error.message
+
+    });
+
   }
 };
 
 export const updateProjectProgress = async (req, res) => {
   try {
-    const { progress } = req.body;
-    const project = await Project.findByPk(req.params.id);
-    if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found' });
-    }
 
-    if (progress < 0 || progress > 100) {
-      return res.status(400).json({
+    const { progress } = req.body;
+
+
+    const project = await Project.findByPk(req.params.id);
+
+
+    if (!project) {
+      return res.status(404).json({
         success: false,
-        message: 'Progress must be between 0 and 100'
+        message: 'Project not found'
       });
     }
 
-    project.progress = progress;
-    project.completionPercentage = progress;
+
+    /*
+      Permission Rules
+
+      Admin:
+      - Any project
+
+      Contractor:
+      - Own projects only
+
+      Site Manager:
+      - Assigned projects only
+
+      Accountant:
+      - Not allowed
+    */
+
+
+    if (!canManageProject(req.user, project)) {
+
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to update project progress'
+      });
+
+    }
+
+
+
+    /*
+      Validate progress value
+    */
+
+
+    if (
+      progress === undefined ||
+      progress < 0 ||
+      progress > 100
+    ) {
+
+      return res.status(400).json({
+
+        success: false,
+
+        message: 'Progress must be between 0 and 100'
+
+      });
+
+    }
+
+
+
+    const oldProgress = project.progress;
+
+project.progress = progress;
+project.completionPercentage = progress;
+
+
+    /*
+      Automatically complete project
+    */
+
+
+    if (Number(progress) === 100) {
+
+      project.status = 'completed';
+
+      project.completionDate = new Date();
+
+    }
+
+
+    /*
+      If progress is reduced,
+      reopen the project
+    */
+
+
+    if (
+      Number(progress) < 100 &&
+      project.status === 'completed'
+    ) {
+
+      project.status = 'active';
+
+      project.completionDate = null;
+
+    }
+
+
+
     await project.save();
 
-    res.json({ success: true, data: project, message: 'Progress updated successfully' });
+
+
+    await Audit.create({
+
+      userId: req.user.id,
+
+      action: 'UPDATE_PROJECT_PROGRESS',
+
+      details: {
+
+        projectId: project.id,
+
+        projectName: project.name,
+
+        oldProgress,
+
+        newProgress: progress,
+
+        performedBy: req.user.email
+
+      },
+
+      affectedRecord: project.id
+
+    });
+
+
+
+    res.json({
+
+      success: true,
+
+      data: project,
+
+      message: 'Project progress updated successfully'
+
+    });
+
+
+
+
   } catch (error) {
-    logger.error('Update progress error:', error);
-    res.status(400).json({ success: false, message: error.message });
+
+
+    logger.error(
+      'Update progress error:',
+      error
+    );
+
+
+    res.status(400).json({
+
+      success:false,
+
+      message:error.message
+    });
+
+
   }
 };

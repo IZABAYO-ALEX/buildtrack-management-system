@@ -176,7 +176,14 @@ const Project = sequelize.define(
       allowNull:true,
       field:'accountant_id'
     },
-
+createdBy:{
+  type:DataTypes.UUID,
+  allowNull:false,
+  field:'created_by',
+  references:{
+    model:'users',
+    key:'id'
+  },
 
     progress:{
       type:DataTypes.DECIMAL(5,2),
@@ -245,8 +252,7 @@ const Project = sequelize.define(
   },
 
 
-  {
-
+  
     tableName:'projects',
 
     timestamps:true,
