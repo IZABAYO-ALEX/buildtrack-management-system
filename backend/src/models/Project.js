@@ -183,6 +183,7 @@ createdBy:{
   references:{
     model:'users',
     key:'id'
+  }
   },
 
     progress:{
@@ -251,12 +252,14 @@ createdBy:{
 
   },
 
-
+{
   
     tableName:'projects',
 
     timestamps:true,
-
+    
+    underscored: true,     
+    
     paranoid:true,
 
     createdAt:'created_at',

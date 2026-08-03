@@ -79,7 +79,6 @@ router.post(
   '/:id/reset-password',
   resetPassword
 );
-router.get("/team", getProjectTeam);
 
 
 export default router;
