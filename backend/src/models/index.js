@@ -154,36 +154,54 @@ Milestone.belongsTo(Project, {
 // ======================================================
 
 Project.hasMany(Request, {
-  foreignKey: 'project_id',
+  foreignKey: 'projectId',
   as: 'requests'
 });
 
 Request.belongsTo(Project, {
-  foreignKey: 'project_id',
+  foreignKey: 'projectId',
   as: 'project'
 });
-
 
 
 // ======================================================
 // USER ↔ REQUEST
 // ======================================================
 
+// User creates requests
 User.hasMany(Request, {
   foreignKey: 'requestedBy',
   as: 'submittedRequests'
 });
 
 Request.belongsTo(User, {
-  foreignKey: 'requesterId',
+  foreignKey: 'requestedBy',
   as: 'requester'
+});
+
+
+// User receives requests
+User.hasMany(Request, {
+  foreignKey: 'requestedTo',
+  as: 'receivedRequests'
+});
+
+Request.belongsTo(User, {
+  foreignKey: 'requestedTo',
+  as: 'requestedToUser'
+});
+
+
+// User approves requests
+User.hasMany(Request, {
+  foreignKey: 'approvedBy',
+  as: 'approvedRequests'
 });
 
 Request.belongsTo(User, {
   foreignKey: 'approvedBy',
   as: 'approver'
 });
-
 
 
 // ======================================================
