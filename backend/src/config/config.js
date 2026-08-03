@@ -15,11 +15,11 @@ dotenv.config({
 
 // Required environment variables with descriptions
 const requiredConfig = {
-  DB_HOST: 'Database host (e.g., zephyr.proxy.rlwy.net)',
-  DB_PORT: 'Database port (e.g., 11964)',
-  DB_USER: 'Database username (e.g., root)',
+  DB_HOST: 'Database host ',
+  DB_PORT: 'Database port ',
+  DB_USER: 'Database username ',
   DB_PASSWORD: 'Database password',
-  DB_NAME: 'Database name (e.g., railway)',
+  DB_NAME: 'Database name',
   JWT_SECRET: 'JWT secret key for authentication',
   CORS_ORIGIN: 'Frontend URL for CORS'
 };
@@ -83,10 +83,13 @@ const parseNumber = (value, fallback) => {
   return isNaN(num) || num < 0 ? fallback : num;
 };
 
-const parseBoolean = (value) => {
+const parseBoolean = (value, fallback=false) => {
+  if (value === undefined) return fallback;
+
   if (typeof value === 'string') {
     return value.toLowerCase() === 'true' || value === '1';
   }
+
   return Boolean(value);
 };
 
@@ -103,43 +106,49 @@ const config = {
   },
 
   database: {
-    host: process.env.DB_HOST,
-    port: parseNumber(process.env.DB_PORT, 3306),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    name: process.env.DB_NAME,
-    ssl: parseBoolean(process.env.DB_SSL, true),
-    dialect: process.env.DB_DIALECT || 'mysql',
-    dialectModule: 'mysql2',
-    dialectOptions: {
-      charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci',
-      connectTimeout: 60000,
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    },
-    pool: {
-      max: parseNumber(process.env.DB_POOL_MAX, 10),
-      min: parseNumber(process.env.DB_POOL_MIN, 0),
-      acquire: parseNumber(process.env.DB_POOL_ACQUIRE, 30000),
-      idle: parseNumber(process.env.DB_POOL_IDLE, 10000)
-    },
-    retry: {
-      max: 3,
-      match: [
-        /SequelizeConnectionError/,
-        /SequelizeConnectionRefusedError/,
-        /SequelizeHostNotFoundError/,
-        /SequelizeHostNotReachableError/,
-        /SequelizeInvalidConnectionError/,
-        /SequelizeConnectionTimedOutError/
-      ]
-    },
-    timezone: '+00:00',
-    logging: process.env.NODE_ENV !== 'production'
+  host: process.env.DB_HOST,
+  port: parseNumber(process.env.DB_PORT, 4000),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  name: process.env.DB_NAME,
+
+  ssl: true,
+
+  dialect: 'mysql',
+  dialectModule: 'mysql2',
+
+  dialectOptions: {
+    charset: 'utf8mb4',
+    connectTimeout: 60000,
+    ssl: {
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: false
+    }
   },
+
+  pool: {
+    max: parseNumber(process.env.DB_POOL_MAX, 10),
+    min: parseNumber(process.env.DB_POOL_MIN, 0),
+    acquire: parseNumber(process.env.DB_POOL_ACQUIRE, 30000),
+    idle: parseNumber(process.env.DB_POOL_IDLE, 10000)
+  },
+
+  timezone: '+00:00',
+
+  retry: {
+    max: 3,
+    match: [
+      /SequelizeConnectionError/,
+      /SequelizeConnectionRefusedError/,
+      /SequelizeHostNotFoundError/,
+      /SequelizeHostNotReachableError/,
+      /SequelizeInvalidConnectionError/,
+      /SequelizeConnectionTimedOutError/
+    ]
+  },
+
+  logging: false
+},
 
   jwt: {
     secret: process.env.JWT_SECRET,
