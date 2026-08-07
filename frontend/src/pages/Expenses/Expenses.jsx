@@ -199,6 +199,9 @@ description: expense.description,
 date: expense.date,
 status: expense.status
 });
+
+setShowEditModal(true);
+  };
   const getProjectName = (projectId) => {
     const project = projects.find(p => p.id === projectId);
     return project?.name || 'Unknown Project';
@@ -480,5 +483,4 @@ status: expense.status
     </DashboardLayout>
   );
 };
-
 export default Expenses;
