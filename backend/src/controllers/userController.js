@@ -3,7 +3,7 @@ import Audit from '../models/Audit.js';
 import bcrypt from 'bcryptjs';
 import logger from '../utils/logger.js';
 import { Op } from 'sequelize';
-
+import EmailService from "../services/email.service.js"
 export const getUsers = async (req, res) => {
   try {
     const users = await User.findAll({
@@ -146,10 +146,17 @@ export const createUser = async (req, res) => {
       createdBy:req.user.id
 
     });
-
-
-
-    logger.info(
+    try {
+  await EmailService.sendWelcomeEmail({
+    fullName: user.fullName,
+    email: user.email,
+    role: user.role,
+    password: plainPassword
+  });
+} catch (emailError) {
+  logger.error("Failed to send welcome email:", emailError);
+}
+   logger.info(
       `User created: ${user.email} by ${req.user.email}`
     );
 

@@ -32,7 +32,7 @@ const Expenses = () => {
     defaultValues: {
       projectId: '',
       category: '',
-      amount: '',
+      amount: 0,
       description: '',
       date: '',
       status: 'pending'
@@ -75,36 +75,108 @@ const Expenses = () => {
   };
 
   const handleCreate = async (data) => {
-    setIsSubmitting(true);
-    try {
-      const response = await expenseService.create(data);
-      setExpenses([response.data.data, ...expenses]);
-      toast.success('Expense recorded successfully!');
-      setShowCreateModal(false);
-      methods.reset();
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to record expense');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
+setIsSubmitting(true);
+
+try {
+
+const expenseData = {
+...data,
+amount: Number(data.amount)
+};
+
+
+const response = await expenseService.create(expenseData);
+
+setExpenses([
+response.data.data,
+...expenses
+]);
+
+
+toast.success('Expense recorded successfully!');
+
+setShowCreateModal(false);
+
+methods.reset();
+
+fetchData();
+
+
+} catch (error) {
+
+toast.error(
+error.response?.data?.message ||
+'Failed to record expense'
+);
+
+} finally {
+
+setIsSubmitting(false);
+
+}
+
+};
 
   const handleUpdate = async (data) => {
-    setIsSubmitting(true);
-    try {
-      const response = await expenseService.update(selectedExpense.id, data);
-      setExpenses(expenses.map(e => e.id === selectedExpense.id ? response.data.data : e));
-      toast.success('Expense updated successfully!');
-      setShowEditModal(false);
-      methods.reset();
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update expense');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
+setIsSubmitting(true);
+
+try {
+
+
+const expenseData = {
+...data,
+amount:Number(data.amount)
+};
+
+
+const response =
+await expenseService.update(
+selectedExpense.id,
+expenseData
+);
+
+
+setExpenses(
+expenses.map(e =>
+e.id === selectedExpense.id
+? response.data.data
+: e
+)
+);
+
+
+toast.success('Expense updated successfully!');
+
+
+setShowEditModal(false);
+
+
+methods.reset();
+
+
+fetchData();
+
+
+} catch(error) {
+
+
+toast.error(
+error.response?.data?.message ||
+'Failed to update expense'
+);
+
+
+} finally {
+
+
+setIsSubmitting(false);
+
+
+}
+
+};
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this expense?')) return;
@@ -119,17 +191,14 @@ const Expenses = () => {
 
   const openEditModal = (expense) => {
     setSelectedExpense(expense);
-    methods.reset({
-      projectId: expense.projectId,
-      category: expense.category,
-      amount: expense.amount,
-      description: expense.description,
-      date: expense.date,
-      status: expense.status
-    });
-    setShowEditModal(true);
-  };
-
+   methods.reset({
+projectId: expense.projectId,
+category: expense.category,
+amount: Number(expense.amount),
+description: expense.description,
+date: expense.date,
+status: expense.status
+});
   const getProjectName = (projectId) => {
     const project = projects.find(p => p.id === projectId);
     return project?.name || 'Unknown Project';
